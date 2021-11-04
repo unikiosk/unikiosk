@@ -32,3 +32,9 @@ Run using docker:
 ```
 docker run -p 7000:7000 quay.io/mangirdas/unikiosk 
 ```
+
+Interact with container:
+```
+make build-cli
+./release/cli --url https://synpse.net
+```
