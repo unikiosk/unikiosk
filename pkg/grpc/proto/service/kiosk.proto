@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package service;
+
+option go_package = "pkg/grpc/service";
+
+import "pkg/grpc/proto/models/kiosk.proto";
+import "pkg/grpc/proto/models/errors.proto";
+
+//create Definition
+service KioskService {
+	rpc start (models.KioskState) returns (StartKioskResponse);
+}
+ 
+message StartKioskResponse {
+	models.KioskState state = 1;
+	models.Error error = 2;
+}

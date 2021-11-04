@@ -1,0 +1,35 @@
+version: v1beta1
+build:
+  roots:
+    - .
+  excludes:
+    - vendor
+lint:
+  use:
+    - DEFAULT
+  allow_comment_ignores: true
+  ignore_only:
+    ENUM_VALUE_PREFIX:
+      - pkg/grpc/proto/models/kiosk.proto
+      - pkg/grpc/proto/models/errors.proto
+      - pkg/grpc/proto/service/service.proto
+    ENUM_ZERO_VALUE_SUFFIX:
+      - pkg/grpc/proto/models/kiosk.proto
+      - pkg/grpc/proto/models/errors.proto
+      - pkg/grpc/proto/service/service.proto
+    PACKAGE_DIRECTORY_MATCH:
+      - pkg/grpc/proto/models/kiosk.proto
+      - pkg/grpc/proto/models/errors.proto
+      - pkg/grpc/proto/service/service.proto
+    PACKAGE_VERSION_SUFFIX:
+      - pkg/grpc/proto/models/kiosk.proto
+      - pkg/grpc/proto/models/errors.proto
+      - pkg/grpc/proto/service/service.proto
+    SERVICE_SUFFIX:
+      - pkg/grpc/proto/models/kiosk.proto
+      - pkg/grpc/proto/models/errors.proto
+      - pkg/grpc/proto/service/service.proto
+
+breaking:
+  use:
+    - WIRE_JSON

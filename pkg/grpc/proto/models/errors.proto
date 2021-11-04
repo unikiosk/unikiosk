@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package models;
+
+option go_package = "pkg/grpc/models";
+
+message Error {
+	string code = 1;
+	string message = 2;
+}
