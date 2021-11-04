@@ -9,7 +9,7 @@ import "pkg/grpc/proto/models/errors.proto";
 
 //create Definition
 service KioskService {
-	rpc start (models.KioskState) returns (StartKioskResponse);
+	rpc startOrUpdate (models.KioskState) returns (StartKioskResponse);
 }
  
 message StartKioskResponse {

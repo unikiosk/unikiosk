@@ -2,13 +2,20 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"os"
 
+	"google.golang.org/grpc"
+
 	"github.com/mjudeikis/unikiosk/pkg/grpc/models"
 	"github.com/mjudeikis/unikiosk/pkg/grpc/service"
-	"google.golang.org/grpc"
+)
+
+var (
+	url            = flag.String("url", "https://synpse.net", `URL to open`)
+	kioskServerUrl = flag.String("unikiosk-url", "localhost:7000", `URL of unikiosk instance`)
 )
 
 func main() {
@@ -21,26 +28,23 @@ func main() {
 
 func run() error {
 	ctx := context.Background()
+	flag.Parse()
 
-	serverAddress := "localhost:7000"
-	conn, err := grpc.Dial(serverAddress, grpc.WithInsecure())
+	conn, err := grpc.Dial(*kioskServerUrl, grpc.WithInsecure())
 	if err != nil {
 		return err
 	}
 
 	client := service.NewKioskServiceClient(conn)
 
-	//md := metadata.Pairs("token", "valid-token")
-	//ctx = metadata.NewOutgoingContext(ctx, md)
-
 	kioskState := models.KioskState{
-		Url: "https://delfi.lt/",
+		Url: *url,
 	}
 
-	if responseMessage, e := client.Start(ctx, &kioskState); e != nil {
+	if responseMessage, e := client.StartOrUpdate(ctx, &kioskState); e != nil {
 		panic(fmt.Sprintf("Was not able to send update %v", e))
 	} else {
-		fmt.Println("Update sent..")
+		fmt.Println("Update sent...")
 		fmt.Println(responseMessage)
 		fmt.Println("=============================")
 	}
