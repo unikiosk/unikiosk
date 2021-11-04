@@ -3,10 +3,10 @@ package models
 import "github.com/mjudeikis/unikiosk/pkg/grpc/models"
 
 type KioskState struct {
-	Url   string
-	Title string
-	SizeW int
-	SizeH int
+	Content string
+	Title   string
+	SizeW   int
+	SizeH   int
 
 	State State
 }
@@ -31,10 +31,10 @@ func (s State) String() string {
 
 func ProtoToKioskState(in *models.KioskState) KioskState {
 	return KioskState{
-		Url:   in.Url,
-		Title: in.Title,
-		SizeW: int(in.SizeW),
-		SizeH: int(in.SizeH),
-		State: State(in.State),
+		Content: in.Content,
+		Title:   in.Title,
+		SizeW:   int(in.SizeW),
+		SizeH:   int(in.SizeH),
+		State:   State(in.State),
 	}
 }

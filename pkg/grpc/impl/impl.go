@@ -26,8 +26,6 @@ func NewKioskServiceGrpcImpl(log *zap.Logger, queue queue.Queue) *KioskServiceGr
 
 // StartOrUpdate will start or update running kioks session
 func (s *KioskServiceGrpcImpl) StartOrUpdate(ctx context.Context, in *models.KioskState) (*service.StartKioskResponse, error) {
-	s.log.Debug("Received request for start kiosk " + in.Url)
-
 	s.queue.Emit(apimodels.ProtoToKioskState(in))
 
 	return &service.StartKioskResponse{

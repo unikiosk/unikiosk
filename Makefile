@@ -1,10 +1,10 @@
 build-screen:
 	CGO_ENABLED=1 GOARCH=amd64 go build -o ./release/screen ./cmd/screen
 
-build-controller:
-	CGO_ENABLED=1 GOARCH=amd64 go build -o ./release/controller ./cmd/controller
+build-cli:
+	CGO_ENABLED=1 GOARCH=amd64 go build -o ./release/cli ./cmd/cli
 
-build: build-screen
+build: build-screen build-cli
 
 build-image:
 	docker build -t quay.io/mangirdas/unikiosk .

@@ -5,7 +5,7 @@ package models;
 option go_package = "pkg/grpc/models";
 
 message KioskState {
-	string url  = 1;
+	string content  = 1;
 	string title = 2;
 	int64 size_w = 3;
 	int64 size_h = 4;

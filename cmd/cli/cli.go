@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -11,11 +12,13 @@ import (
 
 	"github.com/mjudeikis/unikiosk/pkg/grpc/models"
 	"github.com/mjudeikis/unikiosk/pkg/grpc/service"
+	fileutil "github.com/mjudeikis/unikiosk/pkg/util/file"
 )
 
 var (
 	url            = flag.String("url", "https://synpse.net", `URL to open`)
-	kioskServerUrl = flag.String("unikiosk-url", "localhost:7000", `URL of unikiosk instance`)
+	kioskServerUrl = flag.String("unikiosk-url", "localhost:7000", `URL of UniKiosk instance`)
+	file           = flag.String("file", "", `relative path to html file to serve`)
 )
 
 func main() {
@@ -37,8 +40,25 @@ func run() error {
 
 	client := service.NewKioskServiceClient(conn)
 
+	payload := *url
+	if *file != "" {
+		exists, _ := fileutil.Exist(*file)
+		if !exists {
+			return fmt.Errorf("file [%s] not found", *file)
+		}
+		var err error
+		data, err := ioutil.ReadFile(*file)
+		if err != nil {
+			return err
+		}
+
+		payload = `data:text/html,
+		` + string(data) + `
+		`
+	}
+
 	kioskState := models.KioskState{
-		Url: *url,
+		Content: payload,
 	}
 
 	if responseMessage, e := client.StartOrUpdate(ctx, &kioskState); e != nil {

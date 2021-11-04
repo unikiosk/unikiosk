@@ -70,10 +70,10 @@ type Kiosk interface {
 func New(log *zap.Logger, config *config.Config, queue queue.Queue) *kiosk {
 
 	s := models.KioskState{
-		Url:   "https://synpse.net",
-		SizeW: int(C.display_width()),
-		SizeH: int(C.display_height()),
-		Title: "Synpse.net",
+		Content: "",
+		SizeW:   int(C.display_width()),
+		SizeH:   int(C.display_height()),
+		Title:   "Synpse.net",
 	}
 
 	return &kiosk{
@@ -89,13 +89,28 @@ func New(log *zap.Logger, config *config.Config, queue queue.Queue) *kiosk {
 
 func (k *kiosk) startOrRestore() error {
 	w := webview.New(true)
-	w.SetTitle(k.state.Title)
-	// set full screen using c bindings
-	// https://github.com/webview/webview/issues/458
-	w.SetSize(k.state.SizeW, k.state.SizeH, webview.HintNone)
-	w.Navigate(k.state.Url)
-
 	k.w = w
+
+	k.w.SetSize(k.state.SizeW, k.state.SizeH, webview.HintNone)
+
+	k.w.Dispatch(func() {
+
+		files := []string{
+			"assets/index.html",
+		}
+
+		for _, file := range files {
+			d, err := assets.ReadFile(file)
+			if err != nil {
+				k.log.Error("fails to open", zap.Error(err))
+			}
+
+			w.Navigate(`data:text/html,
+    ` + string(d) + `
+    `)
+		}
+	})
+
 	k.w.Run()
 	defer k.w.Destroy()
 
@@ -128,9 +143,9 @@ func (k *kiosk) updateState(ctx context.Context, state models.KioskState) {
 	k.lock.Lock()
 	defer k.lock.Unlock()
 
-	if state.Url != "" && k.state.Url != state.Url {
-		k.w.Navigate(state.Url)
-		k.state.Url = state.Url
+	if state.Content != "" && k.state.Content != state.Content {
+		k.w.Navigate(state.Content)
+		k.state.Content = state.Content
 	}
 
 	if state.Title != "" && k.state.Title != state.Title {
@@ -148,5 +163,4 @@ func (k *kiosk) updateState(ctx context.Context, state models.KioskState) {
 	if changed {
 		k.w.SetSize(k.state.SizeW, k.state.SizeH, webview.HintNone)
 	}
-
 }

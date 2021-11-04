@@ -3,6 +3,7 @@ module github.com/mjudeikis/unikiosk
 go 1.17
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/golang/protobuf v1.4.3
 	github.com/joho/godotenv v1.4.0
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -14,8 +15,6 @@ require (
 )
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/gotk3/gotk3 v0.6.1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
