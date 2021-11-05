@@ -3,10 +3,10 @@ module github.com/mjudeikis/unikiosk
 go 1.17
 
 require (
-	github.com/davecgh/go-spew v1.1.1
 	github.com/golang/protobuf v1.4.3
 	github.com/joho/godotenv v1.4.0
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/webview/webview v0.0.0-20210330151455-f540d88dde4e
 	go.uber.org/zap v1.19.1
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
@@ -15,6 +15,8 @@ require (
 )
 
 require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/google/btree v1.0.1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect

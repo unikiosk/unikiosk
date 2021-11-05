@@ -43,11 +43,14 @@ import "C"
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/mjudeikis/unikiosk/pkg/config"
 	"github.com/mjudeikis/unikiosk/pkg/models"
 	"github.com/mjudeikis/unikiosk/pkg/queue"
+	"github.com/mjudeikis/unikiosk/pkg/store"
+	"github.com/mjudeikis/unikiosk/pkg/store/disk"
 	"github.com/webview/webview"
 	"go.uber.org/zap"
 )
@@ -58,6 +61,7 @@ type kiosk struct {
 
 	queue queue.Queue
 	w     webview.WebView
+	store store.Store
 
 	lock  sync.Mutex
 	state models.KioskState
@@ -67,24 +71,50 @@ type Kiosk interface {
 	Run(ctx context.Context) error
 }
 
-func New(log *zap.Logger, config *config.Config, queue queue.Queue) *kiosk {
+func New(log *zap.Logger, config *config.Config, queue queue.Queue) (*kiosk, error) {
+	d, err := assets.ReadFile("assets/index.html")
+	if err != nil {
+		return nil, err
+	}
 
-	s := models.KioskState{
-		Content: "",
-		SizeW:   int(C.display_width()),
-		SizeH:   int(C.display_height()),
-		Title:   "Synpse.net",
+	store, err := disk.New(log, config)
+	if err != nil {
+		return nil, err
+	}
+
+	var s models.KioskState
+	state, err := store.Get()
+	fmt.Println(state)
+	if err != nil || state == nil {
+		log.Info("no state found - start fresh")
+		s = models.KioskState{
+			Content: `data:text/html,
+			` + string(d) + `
+			`,
+			SizeW: int(C.display_width()),
+			SizeH: int(C.display_height()),
+			Title: "UniKiosk",
+		}
+	} else {
+		s = *state
+	}
+
+	err = store.Persist(s)
+	if err != nil {
+		log.Warn("failed to persist store, will not recover after restart", zap.Error(err))
+		return nil, err
 	}
 
 	return &kiosk{
 		log:    log,
 		config: config,
 		queue:  queue,
+		store:  store,
 		//w is initiated in startOrRestore
 
 		lock:  sync.Mutex{},
 		state: s,
-	}
+	}, nil
 }
 
 func (k *kiosk) startOrRestore() error {
@@ -94,21 +124,7 @@ func (k *kiosk) startOrRestore() error {
 	k.w.SetSize(k.state.SizeW, k.state.SizeH, webview.HintNone)
 
 	k.w.Dispatch(func() {
-
-		files := []string{
-			"assets/index.html",
-		}
-
-		for _, file := range files {
-			d, err := assets.ReadFile(file)
-			if err != nil {
-				k.log.Error("fails to open", zap.Error(err))
-			}
-
-			w.Navigate(`data:text/html,
-    ` + string(d) + `
-    `)
-		}
+		w.Navigate(k.state.Content)
 	})
 
 	k.w.Run()
@@ -127,7 +143,6 @@ func (k *kiosk) Run(ctx context.Context) error {
 	for {
 		k.startOrRestore()
 	}
-
 }
 
 func (k *kiosk) runDispatcher(ctx context.Context) error {
@@ -163,4 +178,10 @@ func (k *kiosk) updateState(ctx context.Context, state models.KioskState) {
 	if changed {
 		k.w.SetSize(k.state.SizeW, k.state.SizeH, webview.HintNone)
 	}
+
+	err := k.store.Persist(k.state)
+	if err != nil {
+		k.log.Warn("failed to persist store, will not recover after restart", zap.Error(err))
+	}
+
 }

@@ -11,7 +11,7 @@ Container initiates X session via xinit and start webview system
 
 Start server using `go run`:
 ```
-go run ./cmd/screen
+make run
 ```
 
 You should see default landing page
@@ -30,7 +30,7 @@ go run ./cmd/cli/ --file example/index.html
 
 Run using docker:
 ```
-docker run -p 7000:7000 quay.io/mangirdas/unikiosk 
+docker run -v /data/unikiosk:/data -p 7000:7000 quay.io/mangirdas/unikiosk 
 ```
 
 Interact with container:

@@ -7,6 +7,7 @@ import (
 	"github.com/mjudeikis/unikiosk/pkg/grpc"
 	"github.com/mjudeikis/unikiosk/pkg/manager"
 	"github.com/mjudeikis/unikiosk/pkg/queue"
+
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
@@ -30,7 +31,11 @@ func New(log *zap.Logger, config *config.Config) (*ServiceManager, error) {
 		return nil, err
 	}
 
-	manager := manager.New(log, config, queue)
+	manager, err := manager.New(log, config, queue)
+	if err != nil {
+		return nil, err
+	}
+
 	grpc, err := grpc.New(log, config, queue)
 	if err != nil {
 		return nil, err

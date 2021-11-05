@@ -6,8 +6,11 @@ import (
 )
 
 type Config struct {
-	GRPCServerURI string `yaml:"controllerGRPCServerURI,omitempty" envconfig:"GRPC_SERVER_URI"  default:":7000"`
-	LogLevel      string `yaml:"logLevel,omitempty" envconfig:"LOG_KEVEL"  default:"debug"`
+	GRPCServerURI       string `yaml:"controllerGRPCServerURI,omitempty" envconfig:"GRPC_SERVER_URI"  default:":7000"`
+	LogLevel            string `yaml:"logLevel,omitempty" envconfig:"LOG_LEVEL"  default:"debug"`
+	DefaultURI          string `yaml:"defaultURI,omitempty" envconfig:"DEFAULT_URI"  default:"https://synpse.net"`
+	DefaultPageLocation string `yaml:"defaultPageLocation,omitempty" envconfig:"DEFAULT_PAGE_LOCATIOn"  default:""`
+	StateDir            string `yaml:"stateDir,omitempty" envconfig:"STATE_DIR"  default:"/data"`
 }
 
 // Load loads the configuration from the environment.

@@ -13,6 +13,9 @@ build-image:
 buildx-image:
 	docker buildx build  --platform linux/amd64,linux/arm64 -t quay.io/mangirdas/unikiosk --push .
 
+run:
+	STATE_DIR=$(shell pwd)/data go run ./cmd/screen
+
 .PHONY: proto
 proto:
 	@echo "--> Generating proto bindings..."
