@@ -7,11 +7,20 @@ build-cli:
 build: build-screen build-cli
 
 build-image:
-	docker build -t quay.io/mangirdas/unikiosk .
+	docker build -t quay.io/unikiosk/unikiosk -f dockerfiles/Dockerfile .
 
 # for arm32 add linux/arm/v7
 buildx-image:
-	docker buildx build  --platform linux/amd64,linux/arm64 -t quay.io/mangirdas/unikiosk --push .
+	docker buildx build  --platform linux/amd64,linux/arm64 -t quay.io/unikiosk/unikiosk -f dockerfiles/Dockerfile .
+
+push-image-test:
+	docker push quay.io/unikiosk/unikiosk
+
+build-image-test:
+	docker build -t quay.io/unikiosk/test-base -f dockerfiles/Dockerfile.test  .
+
+push-image-test:
+	docker push quay.io/unikiosk/test-base
 
 .PHONY: proto
 proto:

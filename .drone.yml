@@ -11,21 +11,21 @@ volumes:
 
 steps:
   - name: fetch-tags
-    image: quay.io/synpse/golang:1.16
+    image:  quay.io/unikiosk/test-base
     commands:
       - git fetch --tags
   - name: lint
-    image: quay.io/synpse/golang:1.16
+    image: quay.io/unikiosk/test-base
     commands:
       - make lint
   - name: test
-    image: quay.io/synpse/golang:1.16
+    image:  quay.io/unikiosk/test-base
     volumes:
     - name: dockersocket
       path: /var/run/docker.sock
     commands:
       - make test
   - name: build
-    image: quay.io/synpse/golang:1.16
+    image: quay.io/unikiosk/test-base
     commands:
       - make buildx-image
