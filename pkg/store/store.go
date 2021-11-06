@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/mjudeikis/unikiosk/pkg/models"
+	"github.com/unikiosk/unikiosk/pkg/models"
 )
 
 type Store interface {

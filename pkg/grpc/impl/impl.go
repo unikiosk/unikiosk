@@ -3,11 +3,12 @@ package impl
 import (
 	"context"
 
-	"github.com/mjudeikis/unikiosk/pkg/grpc/models"
-	"github.com/mjudeikis/unikiosk/pkg/grpc/service"
-	apimodels "github.com/mjudeikis/unikiosk/pkg/models"
-	"github.com/mjudeikis/unikiosk/pkg/queue"
 	"go.uber.org/zap"
+
+	"github.com/unikiosk/unikiosk/pkg/grpc/models"
+	"github.com/unikiosk/unikiosk/pkg/grpc/service"
+	apimodels "github.com/unikiosk/unikiosk/pkg/models"
+	"github.com/unikiosk/unikiosk/pkg/queue"
 )
 
 //KioskServiceGrpcImpl is a implementation of KioskService Grpc Service.

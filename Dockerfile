@@ -23,6 +23,7 @@ RUN apt-get install -y ca-certificates libwebkit2gtk-4.0-dev build-essential xin
 COPY --from=go-build-env /app/screen /bin/
 ADD scripts/start /root/start
 ADD scripts/run /bin/run
+ADD ui /www
 
 RUN chmod +x /bin/run /bin/screen
 

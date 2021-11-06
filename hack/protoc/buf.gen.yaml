@@ -8,8 +8,8 @@ plugins:
     ## necessary when a proto file foo/a.proto imports a proto file from another
     ## directory, e.g. bar/b.proto
     opt: "plugins=grpc\
-      ,Mpkg/grpc/proto/models/errors.proto=github.com/mjudeikis/unikiosk/pkg/grpc/models\
-      ,Mpkg/grpc/proto/models/kiosk.proto=github.com/mjudeikis/unikiosk/pkg/grpc/models\
-      ,Mpkg/grpc/proto/service/kiosk.proto=github.com/mjudeikis/unikiosk/pkg/grpc/service\
+      ,Mpkg/grpc/proto/models/errors.proto=github.com/unikiosk/unikiosk/pkg/grpc/models\
+      ,Mpkg/grpc/proto/models/kiosk.proto=github.com/unikiosk/unikiosk/pkg/grpc/models\
+      ,Mpkg/grpc/proto/service/kiosk.proto=github.com/unikiosk/unikiosk/pkg/grpc/service\
 
       "

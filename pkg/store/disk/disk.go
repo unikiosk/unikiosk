@@ -6,9 +6,9 @@ import (
 	"github.com/peterbourgon/diskv"
 	"go.uber.org/zap"
 
-	"github.com/mjudeikis/unikiosk/pkg/config"
-	"github.com/mjudeikis/unikiosk/pkg/models"
-	"github.com/mjudeikis/unikiosk/pkg/store"
+	"github.com/unikiosk/unikiosk/pkg/config"
+	"github.com/unikiosk/unikiosk/pkg/models"
+	"github.com/unikiosk/unikiosk/pkg/store"
 )
 
 var _ store.Store = &DiskStore{}

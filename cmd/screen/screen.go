@@ -6,9 +6,9 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/mjudeikis/unikiosk/pkg/config"
-	"github.com/mjudeikis/unikiosk/pkg/service"
-	"github.com/mjudeikis/unikiosk/pkg/util/logger"
+	"github.com/unikiosk/unikiosk/pkg/config"
+	"github.com/unikiosk/unikiosk/pkg/service"
+	"github.com/unikiosk/unikiosk/pkg/util/logger"
 )
 
 func init() {

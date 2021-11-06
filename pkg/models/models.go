@@ -1,6 +1,6 @@
 package models
 
-import "github.com/mjudeikis/unikiosk/pkg/grpc/models"
+import "github.com/unikiosk/unikiosk/pkg/grpc/models"
 
 type KioskState struct {
 	Content string

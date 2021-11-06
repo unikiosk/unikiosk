@@ -13,10 +13,26 @@ build-image:
 buildx-image:
 	docker buildx build  --platform linux/amd64,linux/arm64 -t quay.io/mangirdas/unikiosk --push .
 
-run:
-	STATE_DIR=$(shell pwd)/data go run ./cmd/screen
-
 .PHONY: proto
 proto:
 	@echo "--> Generating proto bindings..."
 	@buf --config hack/protoc/buf.yaml --template hack/protoc/buf.gen.yaml generate
+
+run-ui:
+	go run ./hack/ui
+
+run-screen:
+	STATE_DIR=$(shell pwd)/data \
+	WEB_SERVER_URI=localhost:3000 \
+	go run ./cmd/screen
+
+lint:
+	gofmt -s -w cmd hack pkg
+	go run -mod vendor ./vendor/golang.org/x/tools/cmd/goimports -w -local=github.com/synpse-hq/synpse-core cmd hack pkg
+	go run -mod vendor ./hack/validate-imports cmd hack pkg
+	# TODO: Enable this at some point
+	#staticcheck ./...
+
+
+test:
+	go test -mod=vendor -v -failfast `go list ./... | egrep -v /test/`

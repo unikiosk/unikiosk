@@ -3,13 +3,14 @@ package service
 import (
 	"context"
 
-	"github.com/mjudeikis/unikiosk/pkg/config"
-	"github.com/mjudeikis/unikiosk/pkg/grpc"
-	"github.com/mjudeikis/unikiosk/pkg/manager"
-	"github.com/mjudeikis/unikiosk/pkg/queue"
-
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/unikiosk/unikiosk/pkg/config"
+	"github.com/unikiosk/unikiosk/pkg/grpc"
+	"github.com/unikiosk/unikiosk/pkg/manager"
+	"github.com/unikiosk/unikiosk/pkg/queue"
+	"github.com/unikiosk/unikiosk/pkg/web"
 )
 
 type Service interface {
@@ -21,6 +22,7 @@ type ServiceManager struct {
 	config *config.Config
 
 	manager manager.Kiosk
+	web     web.Interface
 	grpc    grpc.Server
 }
 
@@ -36,6 +38,11 @@ func New(log *zap.Logger, config *config.Config) (*ServiceManager, error) {
 		return nil, err
 	}
 
+	web, err := web.New(log, config)
+	if err != nil {
+		return nil, err
+	}
+
 	grpc, err := grpc.New(log, config, queue)
 	if err != nil {
 		return nil, err
@@ -46,6 +53,7 @@ func New(log *zap.Logger, config *config.Config) (*ServiceManager, error) {
 		config: config,
 
 		manager: manager,
+		web:     web,
 		grpc:    grpc,
 	}, nil
 }
@@ -56,6 +64,10 @@ func (s *ServiceManager) Run(ctx context.Context) error {
 
 	g.Go(func() error {
 		return s.grpc.Run(ctx)
+	})
+
+	g.Go(func() error {
+		return s.web.Run(ctx)
 	})
 
 	// manager must run in the main thread! can't be in separete go routine

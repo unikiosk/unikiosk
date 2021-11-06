@@ -1,7 +1,7 @@
 package queue
 
 import (
-	"github.com/mjudeikis/unikiosk/pkg/models"
+	"github.com/unikiosk/unikiosk/pkg/models"
 )
 
 type Queue interface {

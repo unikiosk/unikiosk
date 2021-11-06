@@ -46,13 +46,14 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/mjudeikis/unikiosk/pkg/config"
-	"github.com/mjudeikis/unikiosk/pkg/models"
-	"github.com/mjudeikis/unikiosk/pkg/queue"
-	"github.com/mjudeikis/unikiosk/pkg/store"
-	"github.com/mjudeikis/unikiosk/pkg/store/disk"
 	"github.com/webview/webview"
 	"go.uber.org/zap"
+
+	"github.com/unikiosk/unikiosk/pkg/config"
+	"github.com/unikiosk/unikiosk/pkg/models"
+	"github.com/unikiosk/unikiosk/pkg/queue"
+	"github.com/unikiosk/unikiosk/pkg/store"
+	"github.com/unikiosk/unikiosk/pkg/store/disk"
 )
 
 type kiosk struct {
@@ -72,11 +73,6 @@ type Kiosk interface {
 }
 
 func New(log *zap.Logger, config *config.Config, queue queue.Queue) (*kiosk, error) {
-	d, err := assets.ReadFile("assets/index.html")
-	if err != nil {
-		return nil, err
-	}
-
 	store, err := disk.New(log, config)
 	if err != nil {
 		return nil, err
@@ -88,12 +84,10 @@ func New(log *zap.Logger, config *config.Config, queue queue.Queue) (*kiosk, err
 	if err != nil || state == nil {
 		log.Info("no state found - start fresh")
 		s = models.KioskState{
-			Content: `data:text/html,
-			` + string(d) + `
-			`,
-			SizeW: int(C.display_width()),
-			SizeH: int(C.display_height()),
-			Title: "UniKiosk",
+			Content: config.DefaultURI,
+			SizeW:   int(C.display_width()),
+			SizeH:   int(C.display_height()),
+			Title:   "UniKiosk",
 		}
 	} else {
 		s = *state

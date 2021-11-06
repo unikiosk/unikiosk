@@ -1,0 +1,31 @@
+kind: pipeline
+type: docker
+name: default
+
+volumes:
+  - name: certs
+    temp: {}
+  - name: dockersocket
+    host:
+      path: /var/run/docker.sock
+
+steps:
+  - name: fetch-tags
+    image: quay.io/synpse/golang:1.16
+    commands:
+      - git fetch --tags
+  - name: lint
+    image: quay.io/synpse/golang:1.16
+    commands:
+      - make lint
+  - name: test
+    image: quay.io/synpse/golang:1.16
+    volumes:
+    - name: dockersocket
+      path: /var/run/docker.sock
+    commands:
+      - make test
+  - name: build
+    image: quay.io/synpse/golang:1.16
+    commands:
+      - make buildx-image

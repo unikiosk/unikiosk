@@ -8,11 +8,11 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	"github.com/mjudeikis/unikiosk/pkg/config"
-	"github.com/mjudeikis/unikiosk/pkg/grpc/impl"
-	"github.com/mjudeikis/unikiosk/pkg/grpc/service"
-	"github.com/mjudeikis/unikiosk/pkg/queue"
-	"github.com/mjudeikis/unikiosk/pkg/util/recover"
+	"github.com/unikiosk/unikiosk/pkg/config"
+	"github.com/unikiosk/unikiosk/pkg/grpc/impl"
+	"github.com/unikiosk/unikiosk/pkg/grpc/service"
+	"github.com/unikiosk/unikiosk/pkg/queue"
+	"github.com/unikiosk/unikiosk/pkg/util/recover"
 )
 
 type Server interface {

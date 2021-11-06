@@ -6,12 +6,13 @@ package service
 import (
 	context "context"
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
-	models "github.com/mjudeikis/unikiosk/pkg/grpc/models"
+	models "github.com/unikiosk/unikiosk/pkg/grpc/models"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
