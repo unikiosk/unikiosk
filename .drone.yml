@@ -28,7 +28,13 @@ steps:
   - name: build
     image: quay.io/unikiosk/test-base
     commands:
+      - docker login --username "$${DOCKER_USERNAME}" --password "$${DOCKER_PASSWORD}" quay.io
       - make buildx-image
+    environment:
+      DOCKER_USERNAME:
+        from_secret: docker_username
+      DOCKER_PASSWORD:
+        from_secret: docker_password
     volumes:
     - name: dockersocket
       path: /var/run/docker.sock
