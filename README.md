@@ -1,7 +1,7 @@
 # UniKiosk - Universal Kiosk
 
-Universal Kiosk (UniKiosk) is minimal container image running webview kiosk with built in webserver,
-controllable via GRPC APU. You can reload, start, stop, resize window via remote calls.
+Universal Kiosk (UniKiosk) is a minimal container image running webview kiosk with a built-in webserver,
+controllable via GRPC API. You can reload, start, stop, resize window via remote calls.
 
 Container initiates X session via xinit and starts the service. 
 
@@ -13,7 +13,8 @@ Container initiates X session via xinit and starts the service.
 
 ## Run
 
-Run using docker. Port 7000 is used for remote management. Volume - for state management.
+Port 7000 is used for remote management (GRPC API). Mounted volume - for state management. Run using Docker:
+
 ```
 docker run -d -v /data/unikiosk:/data -p 7000:7000 quay.io/unikiosk/unikiosk 
 ```
@@ -30,9 +31,10 @@ In addition you can provide your own single page to show:
 
 ## Roadmap
 
-1. Ability to provide application bundle
-2. Ability to schedule changing URL's/bundles
-3. Ability to turn off/on view and maybe screen
+- [ ] Ability to provide application bundle-
+- [ ] Ability to schedule changing URL's/bundles
+- [ ] Ability to turn off/on view and maybe screen
+
 ## Development
 
 Start server using `go run`:
