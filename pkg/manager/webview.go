@@ -155,7 +155,7 @@ func (k *kiosk) Run(ctx context.Context) error {
 		time.Sleep(time.Second * 10)
 		k.log.Info("emit", zap.String("content", k.state.Content))
 		k.queue.Emit(models.KioskState{
-			Content: k.state.Content,
+			Content: k.state.Content + "?hack",
 		})
 	}()
 

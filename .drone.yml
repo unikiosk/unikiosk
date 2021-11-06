@@ -29,3 +29,6 @@ steps:
     image: quay.io/unikiosk/test-base
     commands:
       - make buildx-image
+    volumes:
+    - name: dockersocket
+      path: /var/run/docker.sock
