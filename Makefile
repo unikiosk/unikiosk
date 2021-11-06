@@ -11,7 +11,7 @@ build-image:
 
 # for arm32 add linux/arm/v7
 buildx-image:
-	docker buildx create --us \
+	docker buildx create --use \
 	docker buildx build  --platform linux/amd64,linux/arm64 -t quay.io/unikiosk/unikiosk -f dockerfiles/Dockerfile --push .
 
 push-image-test:
