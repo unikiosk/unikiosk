@@ -45,6 +45,8 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/webview/webview"
 	"go.uber.org/zap"
@@ -60,6 +62,8 @@ type kiosk struct {
 	log    *zap.Logger
 	config *config.Config
 
+	isReady *atomic.Value
+
 	queue queue.Queue
 	w     webview.WebView
 	store store.Store
@@ -72,7 +76,7 @@ type Kiosk interface {
 	Run(ctx context.Context) error
 }
 
-func New(log *zap.Logger, config *config.Config, queue queue.Queue) (*kiosk, error) {
+func New(log *zap.Logger, config *config.Config, queue queue.Queue, isReady *atomic.Value) (*kiosk, error) {
 	store, err := disk.New(log, config)
 	if err != nil {
 		return nil, err
@@ -100,10 +104,11 @@ func New(log *zap.Logger, config *config.Config, queue queue.Queue) (*kiosk, err
 	}
 
 	return &kiosk{
-		log:    log,
-		config: config,
-		queue:  queue,
-		store:  store,
+		log:     log,
+		config:  config,
+		queue:   queue,
+		store:   store,
+		isReady: isReady,
 		//w is initiated in startOrRestore
 
 		lock:  sync.Mutex{},
@@ -133,6 +138,11 @@ func (k *kiosk) Run(ctx context.Context) error {
 	// because webview must run in main thread, we run dispatcher as separete thread.
 	// dispatcher responsible for acting to grpc calls and updating the ser
 	go k.runDispatcher(ctx)
+
+	for !k.isReady.Load().(bool) {
+		k.log.Debug("waiting for subsystems to report ready")
+		time.Sleep(time.Second)
+	}
 
 	for {
 		k.startOrRestore()

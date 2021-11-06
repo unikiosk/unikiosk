@@ -1,13 +1,3 @@
-/*
-
-LEGACY -- this file is deprecated.
-
-The font changed name from "Inter UI" to "Inter" in February 2019.
-This file is still here to support older uses of the name "Inter UI".
-
-Please use "inter.css" instead for new applications.
-
-*/
 @font-face {
     font-family: 'Inter UI';
     font-style:  normal;
