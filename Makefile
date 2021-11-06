@@ -23,7 +23,7 @@ run-ui:
 
 run-screen:
 	STATE_DIR=$(shell pwd)/data \
-	WEB_SERVER_URI=localhost:3000 \
+	WEB_SERVER_DIR=$(shell pwd)/ui \
 	go run ./cmd/screen
 
 lint:
@@ -33,6 +33,8 @@ lint:
 	# TODO: Enable this at some point
 	#staticcheck ./...
 
-
 test:
 	go test -mod=vendor -v -failfast `go list ./... | egrep -v /test/`
+
+clean:
+	rm -rf data

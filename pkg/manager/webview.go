@@ -123,6 +123,12 @@ func (k *kiosk) startOrRestore() error {
 	k.w.SetSize(k.state.SizeW, k.state.SizeH, webview.HintNone)
 
 	k.w.Dispatch(func() {
+		contentLog := k.state.Content
+		if len(k.state.Content) > 50 {
+			contentLog = k.state.Content[:50]
+		}
+
+		k.log.Info("open", zap.String("content", contentLog))
 		w.Navigate(k.state.Content)
 	})
 
@@ -141,8 +147,16 @@ func (k *kiosk) Run(ctx context.Context) error {
 
 	for !k.isReady.Load().(bool) {
 		k.log.Debug("waiting for subsystems to report ready")
-		time.Sleep(time.Second)
 	}
+
+	// HACK: Webview is not loading page on start due to some race condition. Still need to get to the bottom of it
+	// We emit event to re-load after 5s of the startup hope we will succeed :/
+	go func() {
+		time.Sleep(time.Second * 10)
+		k.queue.Emit(models.KioskState{
+			Content: k.state.Content,
+		})
+	}()
 
 	for {
 		k.startOrRestore()

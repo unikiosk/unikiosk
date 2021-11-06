@@ -27,12 +27,14 @@ func NewSPAFileServer(log *zap.Logger, fileSystem http.FileSystem) *SPAFileServe
 func (s *SPAFileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path, err := filepath.Abs(r.URL.Path)
 	if err != nil {
+		s.log.Error("serve http error", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if f, err := s.fileSystem.Open(path); err == nil {
 		if err = f.Close(); err != nil {
+			s.log.Error("serve http error", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
