@@ -4,11 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,7 +32,6 @@ type proxy struct {
 	log    *zap.Logger
 	config *config.Config
 	server *http.Server
-
 	events eventer.Eventer
 
 	ready atomic.Value
@@ -79,26 +80,28 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config, events eve
 }
 
 func (p *proxy) getProxyHandler(u *url.URL) (http.Handler, error) {
-	rp := httputil.NewSingleHostReverseProxy(u)
-	if u.Scheme == "https" {
-		// Set a custom DialTLS to access the TLS connection state
-		rp.Transport = &http.Transport{DialTLS: dialTLS}
+	p.u = u
 
-		// Change req.Host so badssl.com host check is passed
-		director := rp.Director
-		rp.Director = func(req *http.Request) {
-			director(req)
-			req.Host = req.URL.Host
-		}
+	rp := httputil.NewSingleHostReverseProxy(u)
+	// Set a custom DialTLS to access the TLS connection state
+	rp.Transport = &http.Transport{DialTLS: dialTLS}
+
+	// Change req.Host so example.com host check is passed
+	director := rp.Director
+	rp.Director = func(req *http.Request) {
+		director(req)
+		req.Host = req.URL.Host
 	}
 
 	r := mux.NewRouter()
 	r.Use(handlers.CompressHandler)
 	if len(p.config.ProxyHeaders) > 0 {
 		r.Use(p.headers())
+		r.Use(p.ws())
 	}
 
 	r.PathPrefix("/").Handler(rp)
+
 	return r, nil
 }
 
@@ -131,16 +134,93 @@ func dialTLS(network, addr string) (net.Conn, error) {
 }
 
 func (p *proxy) headers() func(http.Handler) http.Handler {
-	fmt.Println("setting up headers", p.config.ProxyHeaders)
+	p.log.Debug("setting up headers")
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// inject headers
 			for k, v := range p.config.ProxyHeaders {
-				w.Header().Set(k, v)
+				p.log.Debug("setting header", zap.String("key", k), zap.String("value", v))
+				r.Header.Add(k, v)
 			}
 
 			h.ServeHTTP(w, r)
 		})
 	}
+}
+
+func (p *proxy) ws() func(http.Handler) http.Handler {
+	p.log.Debug("handling ws")
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if p.isWebsocket(r) {
+				port := "80"
+				if p.u.Scheme == "https" {
+					port = "443"
+				}
+
+				p.proxyWebsocket(p.u.Host+":"+port).ServeHTTP(w, r)
+				return
+			}
+
+			h.ServeHTTP(w, r)
+		})
+	}
+}
+
+func (p *proxy) proxyWebsocket(target string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		d, err := net.Dial("tcp", target)
+		if err != nil {
+			http.Error(w, "Error contacting backend server.", 500)
+			p.log.Error("Error dialing websocket backend", zap.String("target", target), zap.Error(err))
+			return
+		}
+		hj, ok := w.(http.Hijacker)
+		if !ok {
+			http.Error(w, "Not a hijacker?", 500)
+			return
+		}
+		nc, _, err := hj.Hijack()
+		if err != nil {
+			log.Printf("Hijack error: %v", err)
+			return
+		}
+		defer nc.Close()
+		defer d.Close()
+
+		err = r.Write(d)
+		if err != nil {
+			p.log.Error("Error copying request to target", zap.Error(err))
+			return
+		}
+
+		errc := make(chan error, 2)
+		cp := func(dst io.Writer, src io.Reader) {
+			_, err := io.Copy(dst, src)
+			errc <- err
+		}
+		go cp(d, nc)
+		go cp(nc, d)
+		<-errc
+	})
+}
+
+func (p *proxy) isWebsocket(req *http.Request) bool {
+	conn_hdr := ""
+	conn_hdrs := req.Header["Connection"]
+	if len(conn_hdrs) > 0 {
+		conn_hdr = conn_hdrs[0]
+	}
+
+	upgrade_websocket := false
+	if strings.ToLower(conn_hdr) == "upgrade" {
+		upgrade_hdrs := req.Header["Upgrade"]
+		if len(upgrade_hdrs) > 0 {
+			upgrade_websocket = (strings.ToLower(upgrade_hdrs[0]) == "websocket")
+		}
+	}
+
+	return upgrade_websocket
 }
 
 func (p *proxy) Run(ctx context.Context) error {
@@ -165,6 +245,7 @@ func (p *proxy) Run(ctx context.Context) error {
 func (p *proxy) Stop(ctx context.Context) error {
 	p.log.Info("stopping proxy")
 	p.ready.Store(false)
+
 	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	return p.server.Shutdown(ctxTimeout)
@@ -198,6 +279,7 @@ func (p *proxy) runProxyReloader(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
+
 			p.lock.Lock()
 			p.server = server
 			p.lock.Unlock()

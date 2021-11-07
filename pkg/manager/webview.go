@@ -170,6 +170,7 @@ func (k *kiosk) runDispatcher(ctx context.Context) error {
 	for event := range listener {
 		// act only on requests to reload webview
 		if event.Type == models.EventTypeWebViewUpdate {
+			k.log.Info("handle webview reload")
 			k.updateState(ctx, event.Payload)
 		}
 	}
@@ -180,8 +181,8 @@ func (k *kiosk) updateState(ctx context.Context, state models.KioskState) {
 	k.lock.Lock()
 	defer k.lock.Unlock()
 
-	k.w.Navigate(state.Content)
 	k.state.Content = state.Content
+	k.w.Navigate(state.Content)
 
 	if state.Title != "" && k.state.Title != state.Title {
 		k.w.Navigate(state.Title)
