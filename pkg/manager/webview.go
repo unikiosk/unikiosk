@@ -46,7 +46,6 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/webview/webview"
 	"go.uber.org/zap"
@@ -76,7 +75,7 @@ type Kiosk interface {
 	Run(ctx context.Context) error
 }
 
-func New(log *zap.Logger, config *config.Config, queue queue.Queue, isReady *atomic.Value) (*kiosk, error) {
+func New(log *zap.Logger, config *config.Config, queue queue.Queue) (*kiosk, error) {
 	store, err := disk.New(log, config)
 	if err != nil {
 		return nil, err
@@ -104,14 +103,12 @@ func New(log *zap.Logger, config *config.Config, queue queue.Queue, isReady *ato
 	}
 
 	return &kiosk{
-		log:     log,
-		config:  config,
-		queue:   queue,
-		store:   store,
-		isReady: isReady,
+		log:    log,
+		config: config,
+		queue:  queue,
+		store:  store,
 		//w is initiated in startOrRestore
 
-		lock:  sync.Mutex{},
 		state: s,
 	}, nil
 }
@@ -145,19 +142,15 @@ func (k *kiosk) Run(ctx context.Context) error {
 	// dispatcher responsible for acting to grpc calls and updating the ser
 	go k.runDispatcher(ctx)
 
-	for !k.isReady.Load().(bool) {
-		k.log.Debug("waiting for subsystems to report ready")
-	}
-
 	// HACK: Webview is not loading page on start due to some race condition. Still need to get to the bottom of it
 	// We emit event to re-load after 2s of the startup hope we will succeed :/
-	go func() {
-		time.Sleep(time.Second * 2)
-		k.log.Info("emit", zap.String("content", k.state.Content))
-		k.queue.Emit(models.KioskState{
-			Content: k.state.Content + "?hack",
-		})
-	}()
+	//go func() {
+	//	time.Sleep(time.Second * 2)
+	//	k.log.Info("emit", zap.String("content", k.state.Content))
+	//	k.queue.Emit(models.KioskState{
+	//		Content: k.state.Content + "?hack",
+	//	})
+	//}()
 
 	for {
 		k.startOrRestore()

@@ -10,6 +10,7 @@ import (
 	"github.com/unikiosk/unikiosk/pkg/config"
 	"github.com/unikiosk/unikiosk/pkg/grpc"
 	"github.com/unikiosk/unikiosk/pkg/manager"
+	"github.com/unikiosk/unikiosk/pkg/proxy"
 	"github.com/unikiosk/unikiosk/pkg/queue"
 	"github.com/unikiosk/unikiosk/pkg/web"
 )
@@ -27,6 +28,7 @@ type ServiceManager struct {
 	manager manager.Kiosk
 	web     web.Interface
 	grpc    grpc.Server
+	proxy   proxy.Proxy
 }
 
 func New(log *zap.Logger, config *config.Config) (*ServiceManager, error) {
@@ -36,20 +38,22 @@ func New(log *zap.Logger, config *config.Config) (*ServiceManager, error) {
 		return nil, err
 	}
 
-	subsystemsReady := atomic.Value{}
-	subsystemsReady.Store(false)
-
-	manager, err := manager.New(log, config, queue, &subsystemsReady)
+	manager, err := manager.New(log.Named("webview"), config, queue)
 	if err != nil {
 		return nil, err
 	}
 
-	web, err := web.New(log, config, &subsystemsReady)
+	web, err := web.New(log.Named("webserver"), config)
 	if err != nil {
 		return nil, err
 	}
 
-	grpc, err := grpc.New(log, config, queue)
+	grpc, err := grpc.New(log.Named("grpc-api"), config, queue)
+	if err != nil {
+		return nil, err
+	}
+
+	proxy, err := proxy.New(log.Named("proxy"), config)
 	if err != nil {
 		return nil, err
 	}
@@ -58,11 +62,10 @@ func New(log *zap.Logger, config *config.Config) (*ServiceManager, error) {
 		log:    log,
 		config: config,
 
-		ready: subsystemsReady,
-
 		manager: manager,
 		web:     web,
 		grpc:    grpc,
+		proxy:   proxy,
 	}, nil
 }
 
@@ -77,6 +80,9 @@ func (s *ServiceManager) Run(ctx context.Context) error {
 
 	g.Go(func() error {
 		return s.web.Run(ctx)
+	})
+	g.Go(func() error {
+		return s.proxy.Run(ctx)
 	})
 
 	// manager must run in the main thread! can't be in separete go routine

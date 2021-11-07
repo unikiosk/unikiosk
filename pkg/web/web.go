@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"strings"
-	"sync/atomic"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -25,19 +24,16 @@ type Service struct {
 	server *http.Server
 	router *mux.Router
 	config *config.Config
-	ready  *atomic.Value
 }
 
 func New(
 	log *zap.Logger,
 	config *config.Config,
-	ready *atomic.Value,
 ) (*Service, error) {
 
 	s := &Service{
 		log:    log,
 		config: config,
-		ready:  ready,
 	}
 
 	s.router = s.setupRouter()
@@ -72,7 +68,6 @@ func (s *Service) Run(ctx context.Context) error {
 	defer s.server.Shutdown(ctx)
 
 	s.log.Info("Server will now listen", zap.String("url", s.config.WebServerURI))
-	s.ready.Store(true)
 	return s.server.ListenAndServe()
 }
 
