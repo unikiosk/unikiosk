@@ -46,6 +46,7 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/webview/webview"
 	"go.uber.org/zap"
@@ -144,13 +145,16 @@ func (k *kiosk) Run(ctx context.Context) error {
 
 	// HACK: Webview is not loading page on start due to some race condition. Still need to get to the bottom of it
 	// We emit event to re-load after 2s of the startup hope we will succeed :/
-	//go func() {
-	//	time.Sleep(time.Second * 2)
-	//	k.log.Info("emit", zap.String("content", k.state.Content))
-	//	k.queue.Emit(models.KioskState{
-	//		Content: k.state.Content + "?hack",
-	//	})
-	//}()
+	go func() {
+		time.Sleep(time.Second * 2)
+		k.log.Info("emit", zap.String("content", k.state.Content))
+		k.events.Emit(&models.Event{
+			Type: models.EventTypeWebViewUpdate,
+			Payload: models.KioskState{
+				Content: k.state.Content + "?hack",
+			},
+		})
+	}()
 
 	for {
 		k.startOrRestore()
