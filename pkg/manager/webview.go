@@ -149,7 +149,8 @@ func (k *kiosk) Run(ctx context.Context) error {
 		time.Sleep(time.Second * 2)
 		k.log.Info("emit", zap.String("content", k.state.Content))
 		k.events.Emit(&models.Event{
-			Type: models.EventTypeWebViewUpdate,
+			Type:      models.EventTypeWebViewUpdate,
+			KioskMode: models.KioskModeDirect,
 			Payload: models.KioskState{
 				Content: k.state.Content + "?hack",
 			},

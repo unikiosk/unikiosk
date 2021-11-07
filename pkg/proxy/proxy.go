@@ -207,7 +207,7 @@ func (p *proxy) runProxyReloader(ctx context.Context) error {
 				// wait for reload
 			}
 
-			// override webview back to proxy as we might be in fire serve mode
+			// override webview back to proxy as we might be in file serve mode
 			p.events.Emit(&models.Event{
 				Type:      models.EventTypeWebViewUpdate,
 				KioskMode: models.KioskModeProxy,
