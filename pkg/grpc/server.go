@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/unikiosk/unikiosk/pkg/config"
+	"github.com/unikiosk/unikiosk/pkg/eventer"
 	"github.com/unikiosk/unikiosk/pkg/grpc/impl"
 	"github.com/unikiosk/unikiosk/pkg/grpc/service"
-	"github.com/unikiosk/unikiosk/pkg/queue"
 	"github.com/unikiosk/unikiosk/pkg/util/recover"
 )
 
@@ -27,8 +27,8 @@ type GRPCServer struct {
 	server   *grpc.Server
 }
 
-func New(log *zap.Logger, config *config.Config, queue queue.Queue) (*GRPCServer, error) {
-	listener, err := net.Listen("tcp", config.GRPCServerURI)
+func New(log *zap.Logger, config *config.Config, events eventer.Eventer) (*GRPCServer, error) {
+	listener, err := net.Listen("tcp", config.GRPCServerAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func New(log *zap.Logger, config *config.Config, queue queue.Queue) (*GRPCServer
 	server := grpc.NewServer(opts...)
 
 	// register kiosk service
-	kioskServiceImpl := impl.NewKioskServiceGrpcImpl(log, queue)
+	kioskServiceImpl := impl.NewKioskServiceGrpcImpl(log, events)
 	service.RegisterKioskServiceServer(server, kioskServiceImpl)
 
 	return &GRPCServer{
@@ -66,22 +66,7 @@ func (s *GRPCServer) Run(ctx context.Context) error {
 
 	}()
 
-	s.log.Info("GRPC Server will now listen", zap.String("url", s.config.GRPCServerURI))
+	s.log.Info("GRPC Server will now listen", zap.String("url", s.config.GRPCServerAddr))
 	return s.server.Serve(s.listener)
 
 }
-
-//func AuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-//	meta, ok := metadata.FromIncomingContext(ctx)
-//	if !ok {
-//		return nil, status.Errorf(codes.Unauthenticated, "missing context metadata")
-//	}
-//	if len(meta["token"]) != 1 {
-//		return nil, status.Errorf(codes.Unauthenticated, "invalid token")
-//	}
-//	if meta["token"][0] != "valid-token" {
-//		return nil, status.Errorf(codes.Unauthenticated, "invalid token")
-//	}
-//
-//	return handler(ctx, req)
-//}

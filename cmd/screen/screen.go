@@ -33,7 +33,7 @@ func run() error {
 
 	log := logger.GetLoggerInstance("", logger.ParseLogLevel(c.LogLevel))
 
-	kiosk, err := service.New(log, c)
+	kiosk, err := service.New(ctx, log, c)
 	if err != nil {
 		return err
 	}

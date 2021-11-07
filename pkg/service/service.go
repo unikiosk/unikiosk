@@ -8,10 +8,10 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/unikiosk/unikiosk/pkg/config"
+	"github.com/unikiosk/unikiosk/pkg/eventer"
 	"github.com/unikiosk/unikiosk/pkg/grpc"
 	"github.com/unikiosk/unikiosk/pkg/manager"
 	"github.com/unikiosk/unikiosk/pkg/proxy"
-	"github.com/unikiosk/unikiosk/pkg/queue"
 	"github.com/unikiosk/unikiosk/pkg/web"
 )
 
@@ -31,14 +31,11 @@ type ServiceManager struct {
 	proxy   proxy.Proxy
 }
 
-func New(log *zap.Logger, config *config.Config) (*ServiceManager, error) {
+func New(ctx context.Context, log *zap.Logger, config *config.Config) (*ServiceManager, error) {
 
-	queue, err := queue.New(1)
-	if err != nil {
-		return nil, err
-	}
+	events := eventer.New(ctx, log)
 
-	manager, err := manager.New(log.Named("webview"), config, queue)
+	manager, err := manager.New(log.Named("webview"), config, events)
 	if err != nil {
 		return nil, err
 	}
@@ -48,12 +45,12 @@ func New(log *zap.Logger, config *config.Config) (*ServiceManager, error) {
 		return nil, err
 	}
 
-	grpc, err := grpc.New(log.Named("grpc-api"), config, queue)
+	grpc, err := grpc.New(log.Named("grpc-api"), config, events)
 	if err != nil {
 		return nil, err
 	}
 
-	proxy, err := proxy.New(log.Named("proxy"), config)
+	proxy, err := proxy.New(ctx, log.Named("proxy"), config, events)
 	if err != nil {
 		return nil, err
 	}

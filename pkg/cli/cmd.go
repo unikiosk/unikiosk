@@ -10,6 +10,7 @@ import (
 
 	"github.com/unikiosk/unikiosk/pkg/grpc/models"
 	"github.com/unikiosk/unikiosk/pkg/grpc/service"
+	apimodels "github.com/unikiosk/unikiosk/pkg/models"
 	fileutil "github.com/unikiosk/unikiosk/pkg/util/file"
 )
 
@@ -60,7 +61,7 @@ func run(ctx context.Context, c config, args []string) error {
 			return err
 		}
 
-		payload = `data:text/html,
+		payload = apimodels.StaticFilePrefix + `,
 		` + string(data) + `
 		`
 	}

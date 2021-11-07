@@ -51,8 +51,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/unikiosk/unikiosk/pkg/config"
+	"github.com/unikiosk/unikiosk/pkg/eventer"
 	"github.com/unikiosk/unikiosk/pkg/models"
-	"github.com/unikiosk/unikiosk/pkg/queue"
 	"github.com/unikiosk/unikiosk/pkg/store"
 	"github.com/unikiosk/unikiosk/pkg/store/disk"
 )
@@ -63,9 +63,9 @@ type kiosk struct {
 
 	isReady *atomic.Value
 
-	queue queue.Queue
-	w     webview.WebView
-	store store.Store
+	events eventer.Eventer
+	w      webview.WebView
+	store  store.Store
 
 	lock  sync.Mutex
 	state models.KioskState
@@ -75,7 +75,7 @@ type Kiosk interface {
 	Run(ctx context.Context) error
 }
 
-func New(log *zap.Logger, config *config.Config, queue queue.Queue) (*kiosk, error) {
+func New(log *zap.Logger, config *config.Config, events eventer.Eventer) (*kiosk, error) {
 	store, err := disk.New(log, config)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func New(log *zap.Logger, config *config.Config, queue queue.Queue) (*kiosk, err
 	if err != nil || state == nil {
 		log.Info("no state found - start fresh")
 		s = models.KioskState{
-			Content: config.DefaultURI,
+			Content: config.DefaultProxyURL,
 			SizeW:   int(C.display_width()),
 			SizeH:   int(C.display_height()),
 			Title:   "UniKiosk",
@@ -105,7 +105,7 @@ func New(log *zap.Logger, config *config.Config, queue queue.Queue) (*kiosk, err
 	return &kiosk{
 		log:    log,
 		config: config,
-		queue:  queue,
+		events: events,
 		store:  store,
 		//w is initiated in startOrRestore
 
@@ -158,10 +158,16 @@ func (k *kiosk) Run(ctx context.Context) error {
 }
 
 func (k *kiosk) runDispatcher(ctx context.Context) error {
-	listener := k.queue.Listen()
+	listener, err := k.events.Subscribe(ctx)
+	if err != nil {
+		return err
+	}
 
 	for event := range listener {
-		k.updateState(ctx, event)
+		// act only on requests to reload webview
+		if event.Type == models.EventTypeWebViewUpdate {
+			k.updateState(ctx, event.Payload)
+		}
 	}
 	return nil
 }
@@ -170,10 +176,8 @@ func (k *kiosk) updateState(ctx context.Context, state models.KioskState) {
 	k.lock.Lock()
 	defer k.lock.Unlock()
 
-	if state.Content != "" && k.state.Content != state.Content {
-		k.w.Navigate(state.Content)
-		k.state.Content = state.Content
-	}
+	k.w.Navigate(state.Content)
+	k.state.Content = state.Content
 
 	if state.Title != "" && k.state.Title != state.Title {
 		k.w.Navigate(state.Title)

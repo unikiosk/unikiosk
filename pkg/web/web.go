@@ -51,7 +51,7 @@ func New(
 	}
 
 	s.server = &http.Server{
-		Addr: config.WebServerURI,
+		Addr: config.WebServerAddr,
 		Handler: handlers.CORS(
 			handlers.AllowCredentials(),
 			handlers.AllowedHeaders([]string{"Content-Type"}),
@@ -67,7 +67,7 @@ func (s *Service) Run(ctx context.Context) error {
 
 	defer s.server.Shutdown(ctx)
 
-	s.log.Info("Server will now listen", zap.String("url", s.config.WebServerURI))
+	s.log.Info("Server will now listen", zap.String("url", s.config.WebServerAddr))
 	return s.server.ListenAndServe()
 }
 

@@ -2,32 +2,48 @@ package impl
 
 import (
 	"context"
+	"strings"
 
 	"go.uber.org/zap"
 
+	"github.com/unikiosk/unikiosk/pkg/eventer"
 	"github.com/unikiosk/unikiosk/pkg/grpc/models"
 	"github.com/unikiosk/unikiosk/pkg/grpc/service"
 	apimodels "github.com/unikiosk/unikiosk/pkg/models"
-	"github.com/unikiosk/unikiosk/pkg/queue"
 )
 
-//KioskServiceGrpcImpl is a implementation of KioskService Grpc Service.
+//KioskServiceGrpcImpl is a implementation of KioskService GRPC Service.
 type KioskServiceGrpcImpl struct {
-	log   *zap.Logger
-	queue queue.Queue
+	log    *zap.Logger
+	events eventer.Eventer
 }
 
 //NewKioskServiceGrpcImpl returns the pointer to the implementation.
-func NewKioskServiceGrpcImpl(log *zap.Logger, queue queue.Queue) *KioskServiceGrpcImpl {
+func NewKioskServiceGrpcImpl(log *zap.Logger, events eventer.Eventer) *KioskServiceGrpcImpl {
 	return &KioskServiceGrpcImpl{
-		log:   log,
-		queue: queue,
+		log:    log,
+		events: events,
 	}
 }
 
-// StartOrUpdate will start or update running kioks session
+// StartOrUpdate will start or update running kiosk session
 func (s *KioskServiceGrpcImpl) StartOrUpdate(ctx context.Context, in *models.KioskState) (*service.StartKioskResponse, error) {
-	s.queue.Emit(apimodels.ProtoToKioskState(in))
+	payload := apimodels.ProtoToKioskState(in)
+
+	// file load request
+	if strings.HasPrefix(payload.Content, apimodels.StaticFilePrefix) {
+		// update webview only
+		s.events.Emit(&apimodels.Event{
+			Type:    apimodels.EventTypeWebViewUpdate,
+			Payload: apimodels.ProtoToKioskState(in),
+		})
+	} else {
+		// update proxy, and proxy will update webview
+		s.events.Emit(&apimodels.Event{
+			Type:    apimodels.EventTypeProxyUpdate,
+			Payload: apimodels.ProtoToKioskState(in),
+		})
+	}
 
 	return &service.StartKioskResponse{
 		State: in,
