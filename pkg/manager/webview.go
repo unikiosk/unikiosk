@@ -169,7 +169,14 @@ func (k *kiosk) runDispatcher(ctx context.Context) error {
 
 	for event := range listener {
 		// act only on requests to reload webview
-		if event.Type == models.EventTypeWebViewUpdate {
+		if event.Type == models.EventTypeWebViewUpdate && event.KioskMode == models.KioskModeDirect {
+			k.log.Info("direct webview reload")
+			k.updateState(ctx, event.Payload)
+		}
+		// act only on requests to reload webview iin proxy mode
+		if event.Type == models.EventTypeWebViewUpdate && event.KioskMode == models.KioskModeProxy {
+			k.log.Info("proxy webview reload")
+			event.Payload.Content = k.config.DefaultProxyURL
 			k.updateState(ctx, event.Payload)
 		}
 	}
@@ -180,24 +187,26 @@ func (k *kiosk) updateState(ctx context.Context, state models.KioskState) {
 	k.lock.Lock()
 	defer k.lock.Unlock()
 
-	k.w.Navigate(state.Content)
-	k.state.Content = state.Content
+	k.w.Dispatch(func() {
+		k.state.Content = state.Content
+		k.w.Navigate(state.Content)
 
-	if state.Title != "" && k.state.Title != state.Title {
-		k.w.Navigate(state.Title)
-		k.state.Title = state.Title
-	}
+		if state.Title != "" && k.state.Title != state.Title {
+			k.w.Navigate(state.Title)
+			k.state.Title = state.Title
+		}
 
-	var changed bool
-	if state.SizeW != 0 && k.state.SizeW != state.SizeW {
-		k.state.SizeW = state.SizeW
-	}
-	if state.SizeH != 0 && k.state.SizeH != state.SizeH {
-		k.state.SizeH = state.SizeH
-	}
-	if changed {
-		k.w.SetSize(k.state.SizeW, k.state.SizeH, webview.HintNone)
-	}
+		var changed bool
+		if state.SizeW != 0 && k.state.SizeW != state.SizeW {
+			k.state.SizeW = state.SizeW
+		}
+		if state.SizeH != 0 && k.state.SizeH != state.SizeH {
+			k.state.SizeH = state.SizeH
+		}
+		if changed {
+			k.w.SetSize(k.state.SizeW, k.state.SizeH, webview.HintNone)
+		}
+	})
 
 	err := k.store.Persist(k.state)
 	if err != nil {

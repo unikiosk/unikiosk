@@ -23,8 +23,9 @@ func ProtoToKioskState(in *models.KioskState) KioskState {
 }
 
 type Event struct {
-	Type    EventType
-	Payload KioskState
+	Type      EventType
+	KioskMode KioskMode
+	Payload   KioskState
 }
 
 type EventType int64
@@ -35,4 +36,13 @@ const (
 	// EventTypeWebViewUpdate - will need only Webview reload.
 	// In the future we might want to server this from application bundle using our webserver, so flow stays the same
 	EventTypeWebViewUpdate
+)
+
+type KioskMode string
+
+var (
+	// KioskModeDirect - use webview directly to render the pages
+	KioskModeDirect KioskMode = "direct"
+	// KioskModeProxy - render pages via built-in proxy
+	KioskModeProxy KioskMode = "proxy"
 )

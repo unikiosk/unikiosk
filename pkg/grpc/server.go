@@ -42,7 +42,7 @@ func New(log *zap.Logger, config *config.Config, events eventer.Eventer) (*GRPCS
 	server := grpc.NewServer(opts...)
 
 	// register kiosk service
-	kioskServiceImpl := impl.NewKioskServiceGrpcImpl(log, events)
+	kioskServiceImpl := impl.NewKioskServiceGrpcImpl(log, config, events)
 	service.RegisterKioskServiceServer(server, kioskServiceImpl)
 
 	return &GRPCServer{

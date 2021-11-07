@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/unikiosk/unikiosk/pkg/models"
 )
 
 type Config struct {
@@ -17,20 +18,18 @@ type Config struct {
 	WebServerAddr string `yaml:"webServerAddr,omitempty" envconfig:"WEB_SERVER_ADDR"  default:":8081"` // web server bind port
 
 	// default routing section
-
 	// DefaultProxyURL - is proxy URL. It used in webview to route requests via proxy
 	// Populated automatically
 	DefaultProxyURL string
-
 	// DefaultWebServerURL is default webserver url. Used to serve default content
 	// Populated automatically
 	DefaultWebServerURL string
-
 	// ProxyHeaders is key:value pairs of headers proxy will inject into requests. Example: "red:1,green:2,blue:3"
 	ProxyHeaders map[string]string `yaml:"proxyHeaders,omitempty" envconfig:"PROXY_HEADERS"  default:""`
 
 	// other variables
-
+	// KioskMode defines if we should use proxy or not for rendering content
+	KioskMode models.KioskMode `yaml:"kioskMode,omitempty" envconfig:"KIOSK_MODE"  default:"direct"`
 	// LogLevel defines log level. Options: info, debug, trace
 	LogLevel string `yaml:"logLevel,omitempty" envconfig:"LOG_LEVEL"  default:"debug"`
 	// StateDir defines where services keeps state
