@@ -77,8 +77,6 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config, events eve
 }
 
 func (p *proxy) getProxyHandler(u *url.URL) (http.Handler, error) {
-	// rp := httputil.NewSingleHostReverseProxy(u)
-
 	rp := &httputil.ReverseProxy{
 		Transport: &http.Transport{DialTLS: dialTLS},
 	}

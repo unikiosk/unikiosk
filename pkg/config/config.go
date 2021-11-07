@@ -1,8 +1,11 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/phayes/freeport"
 
 	"github.com/unikiosk/unikiosk/pkg/models"
 )
@@ -14,7 +17,7 @@ type Config struct {
 	// ProxyServerAddr defines address to which Proxy should bind. It handles all requests and sends them to either our webserver (8081) or to user provided URL.
 	// Proxy purpose is to inject headers, like authentication.
 	// Once proxy destination changes, webview will need to be triggered reload
-	ProxyServerAddr string `yaml:"proxyServerAddr,omitempty" envconfig:"PROXY_SERVER_ADDR"  default:":8080"`
+	ProxyServerAddr string `yaml:"proxyServerAddr,omitempty" envconfig:"PROXY_SERVER_ADDR"  default:""` // Default -random
 	// WebServerAddr - address of where internal web server binds
 	WebServerAddr string `yaml:"webServerAddr,omitempty" envconfig:"WEB_SERVER_ADDR"  default:":8081"` // web server bind port
 
@@ -49,6 +52,14 @@ func Load() (*Config, error) {
 	err := envconfig.Process("", c)
 	if err != nil {
 		return c, err
+	}
+
+	if c.ProxyServerAddr == "" {
+		port, err := freeport.GetFreePort()
+		if err != nil {
+			return nil, fmt.Errorf("failed to allocate free port: %w", err)
+		}
+		c.ProxyServerAddr = fmt.Sprintf(":%d", port)
 	}
 
 	// TODO: add check if user provides full bind URL for proxy server address
