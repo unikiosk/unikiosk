@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
+
 	"github.com/unikiosk/unikiosk/pkg/models"
 )
 
