@@ -6,12 +6,12 @@ import (
 )
 
 type Config struct {
-	// GRPCServerURI is GRPC api used by CLI bind port
+	// GRPCServerURI is GRPC API used by CLI
 	GRPCServerURI string `yaml:"controllerGRPCServerURI,omitempty" envconfig:"GRPC_SERVER_URI"  default:":7000"`
 	// LogLevel defines log level. Options: info, debug, trace
 	LogLevel string `yaml:"logLevel,omitempty" envconfig:"LOG_LEVEL"  default:"debug"`
-	// ProxyServerURI handles all requests and sends to either our webserver (8081) or to user provided URL.
-	// Proxy job is to inject headers, like authentication if user provided one
+	// ProxyServerURI handles all requests and sends them to either our webserver (8081) or to user provided URL.
+	// Proxy purpose is to inject headers, like authentication.
 	// Once proxy destination changes, webview will need to be triggered reload
 	ProxyServerURI string `yaml:"proxyServerURI,omitempty" envconfig:"PROXY_SERVER_URI"  default:":8080"`
 	// DefaultURI - always points to proxy. We load everything using our proxy to simplify injection of headers, credentials.
