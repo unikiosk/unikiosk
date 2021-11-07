@@ -9,8 +9,9 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/unikiosk/unikiosk/pkg/config"
 	"go.uber.org/zap"
+
+	"github.com/unikiosk/unikiosk/pkg/config"
 )
 
 type Proxy interface {
