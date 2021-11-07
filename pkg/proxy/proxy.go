@@ -26,36 +26,37 @@ type Proxy interface {
 }
 
 type proxy struct {
-	log    *zap.Logger
 	config *config.Config
 	server *http.Server
 
 	events eventer.Eventer
 
 	ready atomic.Value
-	lock  sync.RWMutex
 
-	u *url.URL
+	targetURLMu *sync.RWMutex
+	targetURL   *url.URL
+
+	log *zap.Logger
 }
 
 func New(ctx context.Context, log *zap.Logger, config *config.Config, events eventer.Eventer) (*proxy, error) {
 	// TODO: Inject user navigate value here
-	u, err := url.Parse(config.DefaultWebServerURL)
+	defaultURL, err := url.Parse(config.DefaultWebServerURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse upstream address: %w", err)
 	}
 
 	p := proxy{
-		log:    log,
-		config: config,
-		events: events,
-		u:      u,
+		log:       log,
+		config:    config,
+		events:    events,
+		targetURL: defaultURL,
 
-		ready: atomic.Value{},
-		lock:  sync.RWMutex{},
+		ready:       atomic.Value{},
+		targetURLMu: &sync.RWMutex{},
 	}
 
-	h, err := p.getProxyHandler(u)
+	h, err := p.getProxyHandler(defaultURL)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +67,7 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config, events eve
 	}
 
 	go func() {
-		err := p.runProxyReloader(ctx)
+		err := p.runSync(ctx)
 		if err != nil {
 			p.log.Debug("failed proxy reload", zap.Error(err))
 		}
@@ -76,27 +77,44 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config, events eve
 }
 
 func (p *proxy) getProxyHandler(u *url.URL) (http.Handler, error) {
-	rp := httputil.NewSingleHostReverseProxy(u)
+	// rp := httputil.NewSingleHostReverseProxy(u)
+
+	rp := &httputil.ReverseProxy{
+		Transport: &http.Transport{DialTLS: dialTLS},
+	}
+
 	if u.Scheme == "https" {
 		// Set a custom DialTLS to access the TLS connection state
 		rp.Transport = &http.Transport{DialTLS: dialTLS}
 	}
 
-	// Change req.Host so example.com host check is passed
-	director := rp.Director
-	rp.Director = func(req *http.Request) {
-		director(req)
-		req.Host = req.URL.Host
-	}
+	rp.Director = p.Director
 
 	r := mux.NewRouter()
 	r.Use(handlers.CompressHandler)
-	if len(p.config.ProxyHeaders) > 0 {
-		r.Use(p.headers())
-	}
 
 	r.PathPrefix("/").Handler(rp)
 	return r, nil
+}
+
+func (p *proxy) Director(req *http.Request) {
+	for k, v := range p.config.ProxyHeaders {
+		req.Header.Set(k, v)
+	}
+
+	p.targetURLMu.RLock()
+	defer p.targetURLMu.RUnlock()
+
+	req.URL.Scheme = p.targetURL.Scheme
+	req.URL.Host = p.targetURL.Host
+	req.Host = p.targetURL.Host
+
+	if _, ok := req.Header["User-Agent"]; !ok {
+		// explicitly disable User-Agent so it's not set to default value
+		req.Header.Set("User-Agent", "")
+	}
+
+	fmt.Println("target: ", req.URL.String())
 }
 
 func dialTLS(network, addr string) (net.Conn, error) {
@@ -120,30 +138,20 @@ func dialTLS(network, addr string) (net.Conn, error) {
 	cs := tlsConn.ConnectionState()
 	cert := cs.PeerCertificates[0]
 
-	cert.VerifyHostname(host)
+	_ = cert.VerifyHostname(host)
 
 	return tlsConn, nil
 }
 
-func (p *proxy) headers() func(http.Handler) http.Handler {
-	return func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			for k, v := range p.config.ProxyHeaders {
-				w.Header().Set(k, v)
-			}
-
-			h.ServeHTTP(w, r)
-		})
-	}
-}
-
 func (p *proxy) Run(ctx context.Context) error {
 	p.ready.Store(true)
-	p.log.Info("Proxy running", zap.String("listening", p.config.ProxyServerAddr), zap.String("destination", p.u.String()))
+	p.log.Info("Proxy running",
+		zap.String("listening", p.config.ProxyServerAddr),
+		zap.String("destination", p.targetURL.String()),
+	)
 
 	for {
 		// lock while we run
-		p.lock.Lock()
 		p.ready.Store(true)
 
 		err := p.server.ListenAndServe()
@@ -152,7 +160,6 @@ func (p *proxy) Run(ctx context.Context) error {
 			time.Sleep(time.Second)
 		}
 		// once failed release lock sp we can hot swap the server
-		p.lock.Unlock()
 		p.log.Debug("proxy restarting", zap.Error(err))
 	}
 }
@@ -165,7 +172,7 @@ func (p *proxy) Stop(ctx context.Context) error {
 	return p.server.Shutdown(ctxTimeout)
 }
 
-func (p *proxy) runProxyReloader(ctx context.Context) error {
+func (p *proxy) runSync(ctx context.Context) error {
 	listener, err := p.events.Subscribe(ctx)
 	if err != nil {
 		return err
@@ -173,39 +180,20 @@ func (p *proxy) runProxyReloader(ctx context.Context) error {
 
 	for event := range listener {
 		// act only on requests to reload webview
-		if event.Type == models.EventTypeProxyUpdate && p.config.KioskMode == models.KioskModeProxy {
+		if p.config.KioskMode == models.KioskModeProxy &&
+			event.Type == models.EventTypeProxyUpdate {
 			// create new server object and override existing one
 			u, err := url.Parse(event.Payload.Content)
 			if err != nil {
-				return fmt.Errorf("failed to parse upstream address: %w", err)
+				p.log.Error("failed to parse target URL",
+					zap.String("url", event.Payload.Content),
+					zap.Error(err),
+				)
+				continue
 			}
-			p.u = u
-
-			h, err := p.getProxyHandler(u)
-			if err != nil {
-				return err
-			}
-
-			server := &http.Server{
-				Addr:    p.server.Addr,
-				Handler: h,
-			}
-
-			err = p.Stop(ctx)
-			if err != nil {
-				return err
-			}
-
-			p.lock.Lock()
-			p.server = server
-			p.lock.Unlock()
-
-			// wait until proxy restarts. Restart is done by service package
-			// once restared trigger webview reload
-			for !p.ready.Load().(bool) {
-				p.log.Debug("wait for proxy reload")
-				// wait for reload
-			}
+			p.targetURLMu.Lock()
+			p.targetURL = u
+			p.targetURLMu.Unlock()
 
 			// override webview back to proxy as we might be in file serve mode
 			p.events.Emit(&models.Event{

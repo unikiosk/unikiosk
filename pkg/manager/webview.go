@@ -74,6 +74,7 @@ type kiosk struct {
 
 type Kiosk interface {
 	Run(ctx context.Context) error
+	Close()
 }
 
 func New(log *zap.Logger, config *config.Config, events eventer.Eventer) (*kiosk, error) {
@@ -112,6 +113,10 @@ func New(log *zap.Logger, config *config.Config, events eventer.Eventer) (*kiosk
 
 		state: s,
 	}, nil
+}
+
+func (k *kiosk) Close() {
+	k.w.Destroy()
 }
 
 func (k *kiosk) startOrRestore() error {
@@ -169,6 +174,7 @@ func (k *kiosk) runDispatcher(ctx context.Context) error {
 	}
 
 	for event := range listener {
+
 		// act only on requests to reload webview
 		if event.Type == models.EventTypeWebViewUpdate && event.KioskMode == models.KioskModeDirect {
 			k.log.Info("direct webview reload")
