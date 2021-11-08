@@ -6,8 +6,6 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get install -y build-essential libwebkit2gtk-4.0-dev ca-certificates libglib2.0-dev
 
 COPY . .
-ENV GOPROXY="direct"
-RUN  go mod download
 
 ARG TARGETARCH
 # force GTK and pango https://github.com/gotk3/gotk3/issues/693

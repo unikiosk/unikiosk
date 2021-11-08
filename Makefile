@@ -34,7 +34,6 @@ run-ui:
 run-screen:
 	STATE_DIR=$(shell pwd)/data \
 	KIOSK_MODE=proxy \
-	PROXY_HEADERS="foo:bar,foo2:bar2" \
 	WEB_SERVER_DIR=$(shell pwd)/ui \
 	go run ./cmd/screen
 
