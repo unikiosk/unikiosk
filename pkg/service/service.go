@@ -10,10 +10,10 @@ import (
 	"github.com/unikiosk/unikiosk/pkg/config"
 	"github.com/unikiosk/unikiosk/pkg/eventer"
 	"github.com/unikiosk/unikiosk/pkg/grpc"
-	"github.com/unikiosk/unikiosk/pkg/manager"
 	"github.com/unikiosk/unikiosk/pkg/proxy"
 	"github.com/unikiosk/unikiosk/pkg/store/disk"
 	"github.com/unikiosk/unikiosk/pkg/web"
+	"github.com/unikiosk/unikiosk/pkg/webview"
 )
 
 type Service interface {
@@ -26,7 +26,7 @@ type ServiceManager struct {
 
 	ready atomic.Value
 
-	manager manager.Kiosk
+	webview webview.Kiosk
 	web     web.Interface
 	grpc    grpc.Server
 	proxy   proxy.Proxy
@@ -41,7 +41,7 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config) (*ServiceM
 		return nil, err
 	}
 
-	manager, err := manager.New(log.Named("webview"), config, events, store)
+	webview, err := webview.New(log.Named("webview"), config, events, store)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config) (*ServiceM
 		log:    log,
 		config: config,
 
-		manager: manager,
+		webview: webview,
 		web:     web,
 		grpc:    grpc,
 		proxy:   proxy,
@@ -88,9 +88,9 @@ func (s *ServiceManager) Run(ctx context.Context) error {
 		return s.proxy.Run(ctx)
 	})
 
-	// manager must run in the main thread! can't be in separete go routine
-	s.manager.Run(ctx)
-	defer s.manager.Close()
+	// webview must run in the main thread! can't be in separete go routine
+	s.webview.Run(ctx)
+	defer s.webview.Close()
 
 	return g.Wait()
 }

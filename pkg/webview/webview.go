@@ -1,4 +1,4 @@
-package manager
+package webview
 
 /*
 #cgo darwin LDFLAGS: -framework CoreGraphics
@@ -50,6 +50,7 @@ import (
 	"time"
 
 	"github.com/webview/webview"
+	gowebview "github.com/webview/webview"
 	"go.uber.org/zap"
 
 	"github.com/unikiosk/unikiosk/pkg/config"
@@ -67,7 +68,7 @@ type kiosk struct {
 	isReady *atomic.Value
 
 	events eventer.Eventer
-	w      webview.WebView
+	w      gowebview.WebView
 	store  store.Store
 
 	lock  sync.Mutex
@@ -189,6 +190,7 @@ func (k *kiosk) runDispatcher(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
+
 			targetUrl.Host = proxyUrl.Host
 			event.Payload.Content = strings.Replace(targetUrl.String(), "https", "http", 1)
 			k.updateState(ctx, event.Payload)
@@ -201,6 +203,7 @@ func (k *kiosk) updateState(ctx context.Context, state models.KioskState) {
 	k.lock.Lock()
 	defer k.lock.Unlock()
 
+	// Dispatch is async, so we need to persist inside of it :/ this is not ideal as context are mixed
 	k.w.Dispatch(func() {
 		k.state.Content = state.Content
 		k.w.Navigate(state.Content)
@@ -220,11 +223,10 @@ func (k *kiosk) updateState(ctx context.Context, state models.KioskState) {
 		if changed {
 			k.w.SetSize(k.state.SizeW, k.state.SizeH, webview.HintNone)
 		}
+
+		err := k.store.Persist(webViewStateKey, k.state)
+		if err != nil {
+			k.log.Warn("failed to persist store, will not recover after restart", zap.Error(err))
+		}
 	})
-
-	err := k.store.Persist(webViewStateKey, k.state)
-	if err != nil {
-		k.log.Warn("failed to persist store, will not recover after restart", zap.Error(err))
-	}
-
 }
