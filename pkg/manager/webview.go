@@ -159,7 +159,7 @@ func (k *kiosk) Run(ctx context.Context) error {
 			Type:      models.EventTypeWebViewUpdate,
 			KioskMode: models.KioskModeDirect,
 			Payload: models.KioskState{
-				Content: k.state.Content + "?hack",
+				Content: k.state.Content,
 			},
 		})
 	}()
