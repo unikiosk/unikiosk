@@ -111,8 +111,6 @@ func (p *proxy) Director(req *http.Request) {
 		// explicitly disable User-Agent so it's not set to default value
 		req.Header.Set("User-Agent", "")
 	}
-
-	fmt.Println("target: ", req.URL.String())
 }
 
 func dialTLS(network, addr string) (net.Conn, error) {
