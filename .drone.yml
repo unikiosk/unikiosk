@@ -2,6 +2,10 @@ kind: pipeline
 type: docker
 name: default
 
+trigger:
+  branch:
+  - master
+
 volumes:
   - name: certs
     temp: {}
