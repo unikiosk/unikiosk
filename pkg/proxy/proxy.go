@@ -195,6 +195,9 @@ func (p *proxy) runSync(ctx context.Context) error {
 			p.events.Emit(&models.Event{
 				Type:      models.EventTypeWebViewUpdate,
 				KioskMode: models.KioskModeProxy,
+				Payload: models.KioskState{
+					Content: p.targetURL.String(),
+				},
 			})
 		}
 	}

@@ -44,6 +44,8 @@ import "C"
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -183,7 +185,18 @@ func (k *kiosk) runDispatcher(ctx context.Context) error {
 		// act only on requests to reload webview iin proxy mode
 		if event.Type == models.EventTypeWebViewUpdate && event.KioskMode == models.KioskModeProxy {
 			k.log.Info("proxy webview reload")
-			event.Payload.Content = k.config.DefaultProxyURL
+			// replace original URL with proxy address while preserving path
+			// in addition tls is handled in proxy, so drop https
+			targetUrl, err := url.Parse(event.Payload.Content)
+			if err != nil {
+				return err
+			}
+			proxyUrl, err := url.Parse(k.config.DefaultProxyURL)
+			if err != nil {
+				return err
+			}
+			targetUrl.Host = proxyUrl.Host
+			event.Payload.Content = strings.Replace(targetUrl.String(), "https", "http", 1)
 			k.updateState(ctx, event.Payload)
 		}
 	}
