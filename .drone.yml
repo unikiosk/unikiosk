@@ -4,7 +4,7 @@ name: default
 
 trigger:
   branch:
-  - master
+  - main
 
 volumes:
   - name: certs
