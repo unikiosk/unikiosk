@@ -84,6 +84,7 @@ func (s *ServiceManager) Run(ctx context.Context) error {
 
 	// manager must run in the main thread! can't be in separete go routine
 	s.manager.Run(ctx)
+	defer s.manager.Close()
 
 	return g.Wait()
 }
