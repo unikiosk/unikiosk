@@ -12,6 +12,7 @@ import (
 	"github.com/unikiosk/unikiosk/pkg/grpc"
 	"github.com/unikiosk/unikiosk/pkg/manager"
 	"github.com/unikiosk/unikiosk/pkg/proxy"
+	"github.com/unikiosk/unikiosk/pkg/store/disk"
 	"github.com/unikiosk/unikiosk/pkg/web"
 )
 
@@ -35,7 +36,12 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config) (*ServiceM
 
 	events := eventer.New(ctx, log)
 
-	manager, err := manager.New(log.Named("webview"), config, events)
+	store, err := disk.New(log, config)
+	if err != nil {
+		return nil, err
+	}
+
+	manager, err := manager.New(log.Named("webview"), config, events, store)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +56,7 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config) (*ServiceM
 		return nil, err
 	}
 
-	proxy, err := proxy.New(ctx, log.Named("proxy"), config, events)
+	proxy, err := proxy.New(ctx, log.Named("proxy"), config, events, store)
 	if err != nil {
 		return nil, err
 	}

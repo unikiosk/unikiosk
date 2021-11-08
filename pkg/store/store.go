@@ -5,6 +5,6 @@ import (
 )
 
 type Store interface {
-	Get() (*models.KioskState, error)
-	Persist(in models.KioskState) error
+	Get(keys string) (*models.KioskState, error)
+	Persist(key string, in models.KioskState) error
 }

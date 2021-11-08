@@ -19,7 +19,10 @@ import (
 	"github.com/unikiosk/unikiosk/pkg/config"
 	"github.com/unikiosk/unikiosk/pkg/eventer"
 	"github.com/unikiosk/unikiosk/pkg/models"
+	"github.com/unikiosk/unikiosk/pkg/store"
 )
+
+var proxyStateKey = "proxy"
 
 type Proxy interface {
 	Run(ctx context.Context) error
@@ -29,6 +32,7 @@ type proxy struct {
 	config *config.Config
 	server *http.Server
 
+	store  store.Store
 	events eventer.Eventer
 
 	ready atomic.Value
@@ -39,9 +43,18 @@ type proxy struct {
 	log *zap.Logger
 }
 
-func New(ctx context.Context, log *zap.Logger, config *config.Config, events eventer.Eventer) (*proxy, error) {
-	// TODO: Inject user navigate value here
-	defaultURL, err := url.Parse(config.DefaultWebServerURL)
+func New(ctx context.Context, log *zap.Logger, config *config.Config, events eventer.Eventer, store store.Store) (*proxy, error) {
+	// check if we have state, if not - default
+	var u string
+	state, err := store.Get(proxyStateKey)
+	if err != nil || state == nil {
+		log.Info("no state found - start fresh")
+		u = config.DefaultWebServerURL
+	} else {
+		u = state.Content
+	}
+
+	defaultURL, err := url.Parse(u)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse upstream address: %w", err)
 	}
@@ -51,6 +64,7 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config, events eve
 		config:    config,
 		events:    events,
 		targetURL: defaultURL,
+		store:     store,
 
 		ready:       atomic.Value{},
 		targetURLMu: &sync.RWMutex{},
@@ -190,6 +204,13 @@ func (p *proxy) runSync(ctx context.Context) error {
 			p.targetURLMu.Lock()
 			p.targetURL = u
 			p.targetURLMu.Unlock()
+
+			err = p.store.Persist(proxyStateKey, models.KioskState{
+				Content: u.String(),
+			})
+			if err != nil {
+				p.log.Warn("failed to persist proxy state, will fails to recover")
+			}
 
 			// override webview back to proxy as we might be in file serve mode
 			p.events.Emit(&models.Event{

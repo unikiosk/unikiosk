@@ -43,7 +43,6 @@ import "C"
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strings"
 	"sync"
@@ -57,8 +56,9 @@ import (
 	"github.com/unikiosk/unikiosk/pkg/eventer"
 	"github.com/unikiosk/unikiosk/pkg/models"
 	"github.com/unikiosk/unikiosk/pkg/store"
-	"github.com/unikiosk/unikiosk/pkg/store/disk"
 )
+
+var webViewStateKey = "webview"
 
 type kiosk struct {
 	log    *zap.Logger
@@ -79,15 +79,9 @@ type Kiosk interface {
 	Close()
 }
 
-func New(log *zap.Logger, config *config.Config, events eventer.Eventer) (*kiosk, error) {
-	store, err := disk.New(log, config)
-	if err != nil {
-		return nil, err
-	}
-
+func New(log *zap.Logger, config *config.Config, events eventer.Eventer, store store.Store) (*kiosk, error) {
 	var s models.KioskState
-	state, err := store.Get()
-	fmt.Println(state)
+	state, err := store.Get(webViewStateKey)
 	if err != nil || state == nil {
 		log.Info("no state found - start fresh")
 		s = models.KioskState{
@@ -100,7 +94,7 @@ func New(log *zap.Logger, config *config.Config, events eventer.Eventer) (*kiosk
 		s = *state
 	}
 
-	err = store.Persist(s)
+	err = store.Persist(webViewStateKey, s)
 	if err != nil {
 		log.Warn("failed to persist store, will not recover after restart", zap.Error(err))
 		return nil, err
@@ -228,7 +222,7 @@ func (k *kiosk) updateState(ctx context.Context, state models.KioskState) {
 		}
 	})
 
-	err := k.store.Persist(k.state)
+	err := k.store.Persist(webViewStateKey, k.state)
 	if err != nil {
 		k.log.Warn("failed to persist store, will not recover after restart", zap.Error(err))
 	}

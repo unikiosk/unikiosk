@@ -13,8 +13,6 @@ import (
 
 var _ store.Store = &DiskStore{}
 
-var stateKey = "state"
-
 type DiskStore struct {
 	log    *zap.Logger
 	config *config.Config
@@ -36,8 +34,8 @@ func New(log *zap.Logger, config *config.Config) (*DiskStore, error) {
 	}, nil
 }
 
-func (s *DiskStore) Get() (*models.KioskState, error) {
-	data, err := s.store.Read(stateKey)
+func (s *DiskStore) Get(key string) (*models.KioskState, error) {
+	data, err := s.store.Read(key)
 	if err != nil {
 		return nil, err
 	}
@@ -49,11 +47,11 @@ func (s *DiskStore) Get() (*models.KioskState, error) {
 	return &r, nil
 }
 
-func (s *DiskStore) Persist(in models.KioskState) error {
+func (s *DiskStore) Persist(key string, in models.KioskState) error {
 	data, err := json.Marshal(in)
 	if err != nil {
 		return err
 	}
 
-	return s.store.Write(stateKey, data)
+	return s.store.Write(key, data)
 }
