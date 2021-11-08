@@ -14,7 +14,7 @@ type Config struct {
 	// ProxyServerAddr defines address to which Proxy should bind. It handles all requests and sends them to either our webserver (8081) or to user provided URL.
 	// Proxy purpose is to inject headers, like authentication.
 	// Once proxy destination changes, webview will need to be triggered reload
-	ProxyServerAddr string `yaml:"proxyServerAddr,omitempty" envconfig:"PROXY_SERVER_ADDR"  default:"8080"` // Static port for proxy. We need static port so we can recover URLs after shutdown
+	ProxyServerAddr string `yaml:"proxyServerAddr,omitempty" envconfig:"PROXY_SERVER_ADDR"  default:":8080"` // Static port for proxy. We need static port so we can recover URLs after shutdown
 	// WebServerAddr - address of where internal web server binds
 	WebServerAddr string `yaml:"webServerAddr,omitempty" envconfig:"WEB_SERVER_ADDR"  default:":8081"` // web server bind port
 
