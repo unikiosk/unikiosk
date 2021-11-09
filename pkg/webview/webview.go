@@ -79,6 +79,8 @@ type kiosk struct {
 type Kiosk interface {
 	Run(ctx context.Context) error
 	PowerOff() error
+	PowerOn() error
+	Screenshot() error
 	Close()
 }
 
@@ -134,6 +136,11 @@ func (k *kiosk) PowerOn() error {
 	// xset -display :0.0 dpms force off
 	_, _, err := shell.Exec("xset -display :0.0 dpms force on")
 	return err
+}
+
+func (k *kiosk) Screenshoot() error {
+	//  xwd -display :0 -root -out screenshot.xwd
+	return nil
 }
 
 func (k *kiosk) startOrRestore() error {
