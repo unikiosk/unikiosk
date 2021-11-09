@@ -43,6 +43,7 @@ import "C"
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 	"sync"
@@ -127,19 +128,53 @@ func (k *kiosk) Close() {
 // PowerOff - powers off the screen
 func (k *kiosk) PowerOff() error {
 	// xset -display :0.0 dpms force off
-	_, _, err := shell.Exec("xset -display :0.0 dpms force off")
-	return err
+	//_, _, err := shell.Exec("xset -display :0.0 dpms force off")
+	//return err
+	return nil
 }
 
 // PowerOn - powers on the screen
 func (k *kiosk) PowerOn() error {
+	k.log.Debug("execute powerOn")
 	// xset -display :0.0 dpms force off
-	_, _, err := shell.Exec("xset -display :0.0 dpms force on")
+	_, sErr, err := shell.Exec("xset -display :0.0 dpms force on")
+	if err != nil {
+		return err
+	}
+	if sErr != "" {
+		return fmt.Errorf(sErr)
+	}
+	// this prevents blanking of the screen after it gets on
+	_, sErr, err = shell.Exec("xset -display :0.0 s off")
+	if err != nil {
+		return err
+	}
+	if sErr != "" {
+		return fmt.Errorf(sErr)
+	}
+	_, sErr, err = shell.Exec("xset -display :0.0 s noblank")
+	if err != nil {
+		return err
+	}
+	if sErr != "" {
+		return fmt.Errorf(sErr)
+	}
+
 	return err
 }
 
-func (k *kiosk) Screenshoot() error {
+func (k *kiosk) Screenshot() error {
+	k.log.Debug("execute screenhot")
 	//  xwd -display :0 -root -out screenshot.xwd
+	//screenStdout, screenStderr, err := shell.Exec("xwd -display :0 -root")
+	//if err != nil {
+	//	return err
+	//}
+	//if screenStderr != "" {
+	//	return fmt.Errorf(screenStderr)
+	//}
+	//fmt.Println(screenStdout)
+
 	return nil
 }
 

@@ -36,7 +36,7 @@ func RunCLI(ctx context.Context) error {
 	cmd.Flags().StringVarP(&c.url, "url", "u", "https://synpse.net", "Set desired URL to be opened")
 	cmd.Flags().StringVarP(&c.unikioskServerUrl, "server", "s", "localhost:7000", "Set desired URL to be opened")
 	cmd.Flags().StringVarP(&c.file, "file", "f", "", "File to serve")
-	cmd.Flags().StringVarP(&c.action, "action", "a", string(apimodels.ScreenActionUpdate), "Screen action")
+	cmd.Flags().StringVarP(&c.action, "action", "a", string(apimodels.ScreenActionUpdate), "Screen action [start,update,poweron,poweroff]")
 
 	// This will already have global config enriched with values
 	return cmd.ExecuteContext(ctx)
