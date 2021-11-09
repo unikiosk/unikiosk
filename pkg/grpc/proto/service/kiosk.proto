@@ -7,13 +7,13 @@ option go_package = "pkg/grpc/service";
 import "pkg/grpc/proto/models/kiosk.proto";
 import "pkg/grpc/proto/models/errors.proto";
 
-//create Definition
 service KioskService {
-	rpc startOrUpdate (models.KioskState) returns (StartKioskResponse);
-	rpc PowerOnOrOff (models.KioskState) returns (StartKioskResponse);
+	rpc startOrUpdate (models.KioskRequest) returns (KioskResponse);
+	rpc PowerOnOrOff (models.KioskRequest) returns (KioskResponse);
+	rpc Screenshot (models.KioskRequest) returns (KioskResponse);
 }
- 
-message StartKioskResponse {
-	models.KioskState state = 1;
+
+message KioskResponse {
+	models.KioskRespose state = 1;
 	models.Error error = 2;
 }

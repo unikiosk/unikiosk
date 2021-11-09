@@ -17,7 +17,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN dpkg --configure -a
 RUN apt-get update -y
-RUN apt-get install -y ca-certificates libwebkit2gtk-4.0-dev build-essential xinit libglib2.0-dev x11-apps       
+RUN apt-get install -y ca-certificates libwebkit2gtk-4.0-dev build-essential xinit libglib2.0-dev scrot
 
 COPY --from=go-build-env /app/screen /bin/
 ADD scripts/start /root/start

@@ -25,47 +25,47 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type StartKioskResponse struct {
-	State                *models.KioskState `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
-	Error                *models.Error      `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
-	XXX_unrecognized     []byte             `json:"-"`
-	XXX_sizecache        int32              `json:"-"`
+type KioskResponse struct {
+	State                *models.KioskRespose `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
+	Error                *models.Error        `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *StartKioskResponse) Reset()         { *m = StartKioskResponse{} }
-func (m *StartKioskResponse) String() string { return proto.CompactTextString(m) }
-func (*StartKioskResponse) ProtoMessage()    {}
-func (*StartKioskResponse) Descriptor() ([]byte, []int) {
+func (m *KioskResponse) Reset()         { *m = KioskResponse{} }
+func (m *KioskResponse) String() string { return proto.CompactTextString(m) }
+func (*KioskResponse) ProtoMessage()    {}
+func (*KioskResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2ba2961ef98e8275, []int{0}
 }
 
-func (m *StartKioskResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_StartKioskResponse.Unmarshal(m, b)
+func (m *KioskResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_KioskResponse.Unmarshal(m, b)
 }
-func (m *StartKioskResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_StartKioskResponse.Marshal(b, m, deterministic)
+func (m *KioskResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_KioskResponse.Marshal(b, m, deterministic)
 }
-func (m *StartKioskResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_StartKioskResponse.Merge(m, src)
+func (m *KioskResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KioskResponse.Merge(m, src)
 }
-func (m *StartKioskResponse) XXX_Size() int {
-	return xxx_messageInfo_StartKioskResponse.Size(m)
+func (m *KioskResponse) XXX_Size() int {
+	return xxx_messageInfo_KioskResponse.Size(m)
 }
-func (m *StartKioskResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_StartKioskResponse.DiscardUnknown(m)
+func (m *KioskResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_KioskResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_StartKioskResponse proto.InternalMessageInfo
+var xxx_messageInfo_KioskResponse proto.InternalMessageInfo
 
-func (m *StartKioskResponse) GetState() *models.KioskState {
+func (m *KioskResponse) GetState() *models.KioskRespose {
 	if m != nil {
 		return m.State
 	}
 	return nil
 }
 
-func (m *StartKioskResponse) GetError() *models.Error {
+func (m *KioskResponse) GetError() *models.Error {
 	if m != nil {
 		return m.Error
 	}
@@ -73,7 +73,7 @@ func (m *StartKioskResponse) GetError() *models.Error {
 }
 
 func init() {
-	proto.RegisterType((*StartKioskResponse)(nil), "service.StartKioskResponse")
+	proto.RegisterType((*KioskResponse)(nil), "service.KioskResponse")
 }
 
 func init() {
@@ -81,21 +81,22 @@ func init() {
 }
 
 var fileDescriptor_2ba2961ef98e8275 = []byte{
-	// 219 bytes of a gzipped FileDescriptorProto
+	// 236 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0x2a, 0xc8, 0x4e, 0xd7,
 	0x4f, 0x2f, 0x2a, 0x48, 0xd6, 0x2f, 0x28, 0xca, 0x2f, 0xc9, 0xd7, 0x2f, 0x4e, 0x2d, 0x2a, 0xcb,
 	0x4c, 0x4e, 0xd5, 0xcf, 0xce, 0xcc, 0x2f, 0xce, 0xd6, 0x03, 0x8b, 0x09, 0xb1, 0x43, 0x05, 0xa5,
 	0x14, 0xd1, 0x14, 0xe7, 0xe6, 0xa7, 0xa4, 0xe6, 0x14, 0x23, 0xab, 0x95, 0x52, 0xc2, 0xae, 0x24,
-	0xb5, 0xa8, 0x28, 0xbf, 0xa8, 0x18, 0xa2, 0x46, 0x29, 0x99, 0x4b, 0x28, 0xb8, 0x24, 0xb1, 0xa8,
-	0xc4, 0x1b, 0xa4, 0x2f, 0x28, 0xb5, 0xb8, 0x20, 0x3f, 0xaf, 0x38, 0x55, 0x48, 0x83, 0x8b, 0xb5,
-	0xb8, 0x24, 0xb1, 0x24, 0x55, 0x82, 0x51, 0x81, 0x51, 0x83, 0xdb, 0x48, 0x48, 0x0f, 0xa2, 0x55,
-	0x0f, 0xac, 0x2a, 0x18, 0x24, 0x13, 0x04, 0x51, 0x20, 0xa4, 0xcc, 0xc5, 0x0a, 0x36, 0x4f, 0x82,
-	0x09, 0xac, 0x92, 0x17, 0xa6, 0xd2, 0x15, 0x24, 0x18, 0x04, 0x91, 0x33, 0x9a, 0xc8, 0xc8, 0xc5,
-	0x03, 0xd1, 0x0a, 0x71, 0xbc, 0x90, 0x03, 0x17, 0x6f, 0x31, 0xc8, 0x56, 0xff, 0xa2, 0xd0, 0x82,
-	0x14, 0x90, 0x31, 0x58, 0x6c, 0x90, 0x92, 0xd6, 0x83, 0xfa, 0x55, 0x0f, 0x8b, 0x0b, 0xed, 0xb9,
-	0x78, 0x02, 0xf2, 0xcb, 0x53, 0x8b, 0xfc, 0xf3, 0xfc, 0x8b, 0xfc, 0xd3, 0xd2, 0x48, 0x36, 0xc0,
-	0x49, 0x28, 0x4a, 0x00, 0x1e, 0x3c, 0x50, 0x65, 0x49, 0x6c, 0xe0, 0x30, 0x31, 0x06, 0x04, 0x00,
-	0x00, 0xff, 0xff, 0x07, 0xf0, 0xc6, 0x4e, 0x89, 0x01, 0x00, 0x00,
+	0xb5, 0xa8, 0x28, 0xbf, 0xa8, 0x18, 0xa2, 0x46, 0x29, 0x81, 0x8b, 0xd7, 0x1b, 0xa4, 0x25, 0x28,
+	0xb5, 0xb8, 0x20, 0x3f, 0xaf, 0x38, 0x55, 0x48, 0x8b, 0x8b, 0xb5, 0xb8, 0x24, 0xb1, 0x24, 0x55,
+	0x82, 0x51, 0x81, 0x51, 0x83, 0xdb, 0x48, 0x44, 0x0f, 0xa2, 0x4b, 0x0f, 0xa1, 0xaa, 0x38, 0x35,
+	0x08, 0xa2, 0x44, 0x48, 0x99, 0x8b, 0x15, 0x6c, 0x98, 0x04, 0x13, 0x58, 0x2d, 0x2f, 0x4c, 0xad,
+	0x2b, 0x48, 0x30, 0x08, 0x22, 0x67, 0x74, 0x9c, 0x91, 0x8b, 0x07, 0xac, 0x39, 0x18, 0xe2, 0x72,
+	0x21, 0x5b, 0x2e, 0xde, 0xe2, 0x92, 0xc4, 0xa2, 0x12, 0xff, 0xa2, 0xd0, 0x82, 0x14, 0x90, 0x31,
+	0xe8, 0x76, 0x14, 0x96, 0xa6, 0x16, 0x97, 0x48, 0x89, 0xe9, 0x41, 0xbd, 0xaa, 0x87, 0xea, 0x40,
+	0x1b, 0x2e, 0x9e, 0x80, 0xfc, 0xf2, 0xd4, 0x22, 0xff, 0x3c, 0xff, 0x22, 0xff, 0xb4, 0x34, 0x12,
+	0x75, 0x5b, 0x71, 0x71, 0x05, 0x27, 0x17, 0xa5, 0xa6, 0xe6, 0x15, 0x67, 0xe4, 0x97, 0x90, 0xa6,
+	0xd7, 0x49, 0x28, 0x4a, 0x00, 0x1e, 0xa2, 0x50, 0x15, 0x49, 0x6c, 0xe0, 0x60, 0x34, 0x06, 0x04,
+	0x00, 0x00, 0xff, 0xff, 0xca, 0xc1, 0x5c, 0xfd, 0xbc, 0x01, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -110,8 +111,9 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type KioskServiceClient interface {
-	StartOrUpdate(ctx context.Context, in *models.KioskState, opts ...grpc.CallOption) (*StartKioskResponse, error)
-	PowerOnOrOff(ctx context.Context, in *models.KioskState, opts ...grpc.CallOption) (*StartKioskResponse, error)
+	StartOrUpdate(ctx context.Context, in *models.KioskRequest, opts ...grpc.CallOption) (*KioskResponse, error)
+	PowerOnOrOff(ctx context.Context, in *models.KioskRequest, opts ...grpc.CallOption) (*KioskResponse, error)
+	Screenshot(ctx context.Context, in *models.KioskRequest, opts ...grpc.CallOption) (*KioskResponse, error)
 }
 
 type kioskServiceClient struct {
@@ -122,8 +124,8 @@ func NewKioskServiceClient(cc grpc.ClientConnInterface) KioskServiceClient {
 	return &kioskServiceClient{cc}
 }
 
-func (c *kioskServiceClient) StartOrUpdate(ctx context.Context, in *models.KioskState, opts ...grpc.CallOption) (*StartKioskResponse, error) {
-	out := new(StartKioskResponse)
+func (c *kioskServiceClient) StartOrUpdate(ctx context.Context, in *models.KioskRequest, opts ...grpc.CallOption) (*KioskResponse, error) {
+	out := new(KioskResponse)
 	err := c.cc.Invoke(ctx, "/service.KioskService/startOrUpdate", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -131,9 +133,18 @@ func (c *kioskServiceClient) StartOrUpdate(ctx context.Context, in *models.Kiosk
 	return out, nil
 }
 
-func (c *kioskServiceClient) PowerOnOrOff(ctx context.Context, in *models.KioskState, opts ...grpc.CallOption) (*StartKioskResponse, error) {
-	out := new(StartKioskResponse)
+func (c *kioskServiceClient) PowerOnOrOff(ctx context.Context, in *models.KioskRequest, opts ...grpc.CallOption) (*KioskResponse, error) {
+	out := new(KioskResponse)
 	err := c.cc.Invoke(ctx, "/service.KioskService/PowerOnOrOff", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kioskServiceClient) Screenshot(ctx context.Context, in *models.KioskRequest, opts ...grpc.CallOption) (*KioskResponse, error) {
+	out := new(KioskResponse)
+	err := c.cc.Invoke(ctx, "/service.KioskService/Screenshot", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -142,19 +153,23 @@ func (c *kioskServiceClient) PowerOnOrOff(ctx context.Context, in *models.KioskS
 
 // KioskServiceServer is the server API for KioskService service.
 type KioskServiceServer interface {
-	StartOrUpdate(context.Context, *models.KioskState) (*StartKioskResponse, error)
-	PowerOnOrOff(context.Context, *models.KioskState) (*StartKioskResponse, error)
+	StartOrUpdate(context.Context, *models.KioskRequest) (*KioskResponse, error)
+	PowerOnOrOff(context.Context, *models.KioskRequest) (*KioskResponse, error)
+	Screenshot(context.Context, *models.KioskRequest) (*KioskResponse, error)
 }
 
 // UnimplementedKioskServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedKioskServiceServer struct {
 }
 
-func (*UnimplementedKioskServiceServer) StartOrUpdate(ctx context.Context, req *models.KioskState) (*StartKioskResponse, error) {
+func (*UnimplementedKioskServiceServer) StartOrUpdate(ctx context.Context, req *models.KioskRequest) (*KioskResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartOrUpdate not implemented")
 }
-func (*UnimplementedKioskServiceServer) PowerOnOrOff(ctx context.Context, req *models.KioskState) (*StartKioskResponse, error) {
+func (*UnimplementedKioskServiceServer) PowerOnOrOff(ctx context.Context, req *models.KioskRequest) (*KioskResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PowerOnOrOff not implemented")
+}
+func (*UnimplementedKioskServiceServer) Screenshot(ctx context.Context, req *models.KioskRequest) (*KioskResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Screenshot not implemented")
 }
 
 func RegisterKioskServiceServer(s *grpc.Server, srv KioskServiceServer) {
@@ -162,7 +177,7 @@ func RegisterKioskServiceServer(s *grpc.Server, srv KioskServiceServer) {
 }
 
 func _KioskService_StartOrUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(models.KioskState)
+	in := new(models.KioskRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -174,13 +189,13 @@ func _KioskService_StartOrUpdate_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: "/service.KioskService/StartOrUpdate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KioskServiceServer).StartOrUpdate(ctx, req.(*models.KioskState))
+		return srv.(KioskServiceServer).StartOrUpdate(ctx, req.(*models.KioskRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _KioskService_PowerOnOrOff_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(models.KioskState)
+	in := new(models.KioskRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -192,7 +207,25 @@ func _KioskService_PowerOnOrOff_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: "/service.KioskService/PowerOnOrOff",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KioskServiceServer).PowerOnOrOff(ctx, req.(*models.KioskState))
+		return srv.(KioskServiceServer).PowerOnOrOff(ctx, req.(*models.KioskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KioskService_Screenshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.KioskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KioskServiceServer).Screenshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/service.KioskService/Screenshot",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KioskServiceServer).Screenshot(ctx, req.(*models.KioskRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -208,6 +241,10 @@ var _KioskService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PowerOnOrOff",
 			Handler:    _KioskService_PowerOnOrOff_Handler,
+		},
+		{
+			MethodName: "Screenshot",
+			Handler:    _KioskService_Screenshot_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

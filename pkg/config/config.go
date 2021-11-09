@@ -4,7 +4,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 
-	"github.com/unikiosk/unikiosk/pkg/models"
+	"github.com/unikiosk/unikiosk/pkg/api"
 )
 
 type Config struct {
@@ -30,7 +30,7 @@ type Config struct {
 
 	// other variables
 	// KioskMode defines if we should use proxy or not for rendering content
-	KioskMode models.KioskMode `yaml:"kioskMode,omitempty" envconfig:"KIOSK_MODE"  default:"direct"`
+	KioskMode api.KioskMode `yaml:"kioskMode,omitempty" envconfig:"KIOSK_MODE"  default:"direct"`
 	// LogLevel defines log level. Options: info, debug, trace
 	LogLevel string `yaml:"logLevel,omitempty" envconfig:"LOG_LEVEL"  default:"debug"`
 	// StateDir defines where services keeps state

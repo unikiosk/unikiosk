@@ -16,9 +16,9 @@ import (
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
+	"github.com/unikiosk/unikiosk/pkg/api"
 	"github.com/unikiosk/unikiosk/pkg/config"
 	"github.com/unikiosk/unikiosk/pkg/eventer"
-	"github.com/unikiosk/unikiosk/pkg/models"
 	"github.com/unikiosk/unikiosk/pkg/store"
 )
 
@@ -183,20 +183,19 @@ func (p *proxy) Stop(ctx context.Context) error {
 }
 
 func (p *proxy) runSync(ctx context.Context) error {
-	listener, err := p.events.Subscribe(ctx)
-	if err != nil {
-		return err
-	}
+	listener := p.events.Subscribe(ctx)
 
 	for event := range listener {
+		e := event.Payload
+		callback := event.Callback
 		// act only on requests to reload webview
-		if p.config.KioskMode == models.KioskModeProxy &&
-			event.Type == models.EventTypeProxyUpdate {
+		if p.config.KioskMode == api.KioskModeProxy &&
+			e.Type == api.EventTypeProxyUpdate {
 			// create new server object and override existing one
-			u, err := url.Parse(event.Payload.Content)
+			u, err := url.Parse(e.Request.Content)
 			if err != nil {
 				p.log.Error("failed to parse target URL",
-					zap.String("url", event.Payload.Content),
+					zap.String("url", e.Request.Content),
 					zap.Error(err),
 				)
 				continue
@@ -205,7 +204,7 @@ func (p *proxy) runSync(ctx context.Context) error {
 			p.targetURL = u
 			p.targetURLMu.Unlock()
 
-			err = p.store.Persist(proxyStateKey, models.KioskState{
+			err = p.store.Persist(proxyStateKey, api.KioskState{
 				Content: u.String(),
 			})
 			if err != nil {
@@ -213,13 +212,22 @@ func (p *proxy) runSync(ctx context.Context) error {
 			}
 
 			// override webview back to proxy as we might be in file serve mode
-			p.events.Emit(&models.Event{
-				Type:      models.EventTypeWebViewUpdate,
-				KioskMode: models.KioskModeProxy,
-				Payload: models.KioskState{
-					Content: p.targetURL.String(),
+			_, err = p.events.Emit(&eventer.EventWrapper{
+				Payload: api.Event{
+					Type:      api.EventTypeWebViewUpdate,
+					KioskMode: api.KioskModeProxy,
+					Request: api.KioskRequest{
+						Content: p.targetURL.String(),
+					},
 				},
+				// pipe in callback
+				Callback: callback,
 			})
+			if err != nil {
+				p.log.Error("failed to emit webview update event",
+					zap.Error(err),
+				)
+			}
 		}
 	}
 	return nil

@@ -6,8 +6,8 @@ import (
 	"github.com/peterbourgon/diskv"
 	"go.uber.org/zap"
 
+	"github.com/unikiosk/unikiosk/pkg/api"
 	"github.com/unikiosk/unikiosk/pkg/config"
-	"github.com/unikiosk/unikiosk/pkg/models"
 	"github.com/unikiosk/unikiosk/pkg/store"
 )
 
@@ -34,12 +34,12 @@ func New(log *zap.Logger, config *config.Config) (*DiskStore, error) {
 	}, nil
 }
 
-func (s *DiskStore) Get(key string) (*models.KioskState, error) {
+func (s *DiskStore) Get(key string) (*api.KioskState, error) {
 	data, err := s.store.Read(key)
 	if err != nil {
 		return nil, err
 	}
-	var r models.KioskState
+	var r api.KioskState
 	err = json.Unmarshal(data, &r)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (s *DiskStore) Get(key string) (*models.KioskState, error) {
 	return &r, nil
 }
 
-func (s *DiskStore) Persist(key string, in models.KioskState) error {
+func (s *DiskStore) Persist(key string, in api.KioskState) error {
 	data, err := json.Marshal(in)
 	if err != nil {
 		return err

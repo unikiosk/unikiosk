@@ -1,62 +1,24 @@
 package webview
 
-/*
-#cgo darwin LDFLAGS: -framework CoreGraphics -L/usr/include/X11 -lextensions
-#cgo linux pkg-config: x11 xkbcommon x11-xcb xcursor xfixes
-#if defined(__APPLE__)
-#include <CoreGraphics/CGDisplayConfiguration.h>
-int display_width() {
-	return CGDisplayPixelsWide(CGMainDisplayID());
-}
-int display_height() {
-	return CGDisplayPixelsHigh(CGMainDisplayID());
-}
-#elif defined(_WIN32)
-#include <wtypes.h>
-int display_width() {
-	RECT desktop;
-	const HWND hDesktop = GetDesktopWindow();
-	GetWindowRect(hDesktop, &desktop);
-	return desktop.right;
-}
-int display_height() {
-	RECT desktop;
-	const HWND hDesktop = GetDesktopWindow();
-	GetWindowRect(hDesktop, &desktop);
-	return desktop.bottom;
-}
-#else
-#include <X11/Xlib.h>
-int display_width() {
-	Display* d = XOpenDisplay(NULL);
-	Screen*  s = DefaultScreenOfDisplay(d);
-	return s->width;
-}
-int display_height() {
-	Display* d = XOpenDisplay(NULL);
-	Screen*  s = DefaultScreenOfDisplay(d);
-	return s->height;
-}
-#endif
-*/
-import "C"
-
 import (
 	"context"
 	"fmt"
+	"image/png"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
+	"github.com/kbinani/screenshot"
 	"github.com/webview/webview"
 	gowebview "github.com/webview/webview"
 	"go.uber.org/zap"
 
+	"github.com/unikiosk/unikiosk/pkg/api"
 	"github.com/unikiosk/unikiosk/pkg/config"
 	"github.com/unikiosk/unikiosk/pkg/eventer"
-	"github.com/unikiosk/unikiosk/pkg/models"
 	"github.com/unikiosk/unikiosk/pkg/store"
 	"github.com/unikiosk/unikiosk/pkg/util/shell"
 )
@@ -67,14 +29,11 @@ type kiosk struct {
 	log    *zap.Logger
 	config *config.Config
 
-	isReady *atomic.Value
-
 	events eventer.Eventer
 	w      gowebview.WebView
 	store  store.Store
 
-	lock  sync.Mutex
-	state models.KioskState
+	lock sync.Mutex
 }
 
 type Kiosk interface {
@@ -86,35 +45,17 @@ type Kiosk interface {
 }
 
 func New(log *zap.Logger, config *config.Config, events eventer.Eventer, store store.Store) (*kiosk, error) {
-	var s models.KioskState
-	state, err := store.Get(webViewStateKey)
-	if err != nil || state == nil {
-		log.Info("no state found - start fresh")
-		s = models.KioskState{
-			Content: config.DefaultProxyURL,
-			SizeW:   int(C.display_width()),
-			SizeH:   int(C.display_height()),
-			Title:   "UniKiosk",
-		}
-	} else {
-		s = *state
-	}
-
-	err = store.Persist(webViewStateKey, s)
-	if err != nil {
-		log.Warn("failed to persist store, will not recover after restart", zap.Error(err))
-		return nil, err
-	}
-
-	return &kiosk{
+	k := &kiosk{
 		log:    log,
 		config: config,
 		events: events,
 		store:  store,
 		//w is initiated in startOrRestore
+	}
 
-		state: s,
-	}, nil
+	// empty get to we set it on the first run
+	_ = k.getCurrentState()
+	return k, nil
 }
 
 func (k *kiosk) Close() {
@@ -128,9 +69,8 @@ func (k *kiosk) Close() {
 // PowerOff - powers off the screen
 func (k *kiosk) PowerOff() error {
 	// xset -display :0.0 dpms force off
-	//_, _, err := shell.Exec("xset -display :0.0 dpms force off")
-	//return err
-	return nil
+	_, _, err := shell.Exec("xset -display :0.0 dpms force off")
+	return err
 }
 
 // PowerOn - powers on the screen
@@ -164,16 +104,25 @@ func (k *kiosk) PowerOn() error {
 }
 
 func (k *kiosk) Screenshot() error {
-	k.log.Debug("execute screenhot")
-	//  xwd -display :0 -root -out screenshot.xwd
-	//screenStdout, screenStderr, err := shell.Exec("xwd -display :0 -root")
-	//if err != nil {
-	//	return err
-	//}
-	//if screenStderr != "" {
-	//	return fmt.Errorf(screenStderr)
-	//}
-	//fmt.Println(screenStdout)
+	n := screenshot.NumActiveDisplays()
+
+	for i := 0; i < n; i++ {
+		bounds := screenshot.GetDisplayBounds(i)
+
+		img, err := screenshot.CaptureRect(bounds)
+		if err != nil {
+			panic(err)
+		}
+		fileName := fmt.Sprintf(filepath.Join(k.config.StateDir, "%d_%dx%d.png"), i, bounds.Dx(), bounds.Dy())
+		file, err := os.Create(fileName)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		png.Encode(file, img)
+
+		fmt.Printf("#%d : %v \"%s\"\n", i, bounds, fileName)
+	}
 
 	return nil
 }
@@ -182,16 +131,18 @@ func (k *kiosk) startOrRestore() error {
 	w := webview.New(true)
 	k.w = w
 
-	k.w.SetSize(k.state.SizeW, k.state.SizeH, webview.HintNone)
+	state := k.getCurrentState()
+
+	k.w.SetSize(int(state.SizeW), int(state.SizeH), webview.HintNone)
 
 	k.w.Dispatch(func() {
-		contentLog := k.state.Content
-		if len(k.state.Content) > 50 {
-			contentLog = k.state.Content[:50]
+		contentLog := state.Content
+		if len(state.Content) > 50 {
+			contentLog = state.Content[:50]
 		}
 
 		k.log.Info("open", zap.String("content", contentLog))
-		w.Navigate(k.state.Content)
+		w.Navigate(state.Content)
 	})
 
 	k.w.Run()
@@ -211,12 +162,18 @@ func (k *kiosk) Run(ctx context.Context) error {
 	// We emit event to re-load after 2s of the startup hope we will succeed :/
 	go func() {
 		time.Sleep(time.Second * 2)
-		k.log.Info("emit", zap.String("content", k.state.Content))
-		k.events.Emit(&models.Event{
-			Type:      models.EventTypeWebViewUpdate,
-			KioskMode: models.KioskModeDirect,
-			Payload: models.KioskState{
-				Content: k.state.Content,
+		state := k.getCurrentState()
+		k.log.Info("emit", zap.String("content", state.Content))
+		_, _ = k.events.Emit(&eventer.EventWrapper{
+			Payload: api.Event{
+				Type:      api.EventTypeWebViewUpdate,
+				KioskMode: api.KioskModeDirect,
+				Request: api.KioskRequest{
+					Content: state.Content,
+					Title:   state.Title,
+					SizeW:   state.SizeW,
+					SizeH:   state.SizeH,
+				},
 			},
 		})
 	}()
@@ -227,23 +184,23 @@ func (k *kiosk) Run(ctx context.Context) error {
 }
 
 func (k *kiosk) runDispatcher(ctx context.Context) error {
-	listener, err := k.events.Subscribe(ctx)
-	if err != nil {
-		return err
-	}
+	listener := k.events.Subscribe(ctx)
 
 	for event := range listener {
+		e := event.Payload
+		callback := event.Callback
+
 		// act only on requests to reload webview
-		if event.Type == models.EventTypeWebViewUpdate && event.KioskMode == models.KioskModeDirect {
+		if e.Type == api.EventTypeWebViewUpdate && e.KioskMode == api.KioskModeDirect {
 			k.log.Info("direct webview reload")
-			k.updateState(ctx, event.Payload)
+			k.updateState(ctx, e.Request)
 		}
 		// act only on requests to reload webview iin proxy mode
-		if event.Type == models.EventTypeWebViewUpdate && event.KioskMode == models.KioskModeProxy {
+		if e.Type == api.EventTypeWebViewUpdate && e.KioskMode == api.KioskModeProxy {
 			k.log.Info("proxy webview reload")
 			// replace original URL with proxy address while preserving path
 			// in addition tls is handled in proxy, so drop https
-			targetUrl, err := url.Parse(event.Payload.Content)
+			targetUrl, err := url.Parse(e.Request.Content)
 			if err != nil {
 				return err
 			}
@@ -253,49 +210,79 @@ func (k *kiosk) runDispatcher(ctx context.Context) error {
 			}
 
 			targetUrl.Host = proxyUrl.Host
-			event.Payload.Content = strings.Replace(targetUrl.String(), "https", "http", 1)
-			k.updateState(ctx, event.Payload)
+			e.Request.Content = strings.Replace(targetUrl.String(), "https", "http", 1)
+			k.updateState(ctx, e.Request)
 		}
 		// if power action event
-		if event.Type == models.EventTypePowerAction {
-			k.log.Info("power action", zap.String("action", string(event.Payload.Action)))
-			if event.Payload.Action == models.ScreenActionPowerOff {
+		if e.Type == api.EventTypePowerAction {
+			k.log.Info("power action", zap.String("action", e.Request.Action.String()))
+			if e.Request.Action == api.ScreenActionPowerOff {
 				k.PowerOff()
+				k.updateState(ctx, e.Request)
 			}
-			if event.Payload.Action == models.ScreenActionPowerOn {
+			if e.Request.Action == api.ScreenActionPowerOn {
 				k.PowerOn()
+				k.updateState(ctx, e.Request)
 			}
 		}
+
+		state := k.getCurrentState()
+
+		result := &eventer.EventWrapper{
+			Payload: api.Event{
+				Response: api.KioskResponse{
+					Content:          state.Content,
+					Title:            state.Title,
+					SizeW:            state.SizeW,
+					SizeH:            state.SizeH,
+					ScreenPowerState: state.ScreenPowerState,
+					KioskMode:        state.KioskMode,
+				},
+			},
+		}
+
+		callback <- result
 	}
 	return nil
 }
 
-func (k *kiosk) updateState(ctx context.Context, state models.KioskState) {
+func (k *kiosk) updateState(ctx context.Context, in api.KioskRequest) {
 	k.lock.Lock()
 	defer k.lock.Unlock()
 
+	state := k.getCurrentState()
+
 	// Dispatch is async, so we need to persist inside of it :/ this is not ideal as context are mixed
 	k.w.Dispatch(func() {
-		k.state.Content = state.Content
+		state.Content = in.Content
 		k.w.Navigate(state.Content)
 
-		if state.Title != "" && k.state.Title != state.Title {
-			k.w.Navigate(state.Title)
-			k.state.Title = state.Title
+		if in.Title != "" && state.Title != in.Title {
+			k.w.Navigate(in.Title)
+			state.Title = in.Title
 		}
 
 		var changed bool
-		if state.SizeW != 0 && k.state.SizeW != state.SizeW {
-			k.state.SizeW = state.SizeW
+		if in.SizeW != 0 && state.SizeW != in.SizeW {
+			state.SizeW = in.SizeW
+			changed = true
 		}
-		if state.SizeH != 0 && k.state.SizeH != state.SizeH {
-			k.state.SizeH = state.SizeH
+		if in.SizeH != 0 && state.SizeH != in.SizeH {
+			state.SizeH = in.SizeH
+			changed = true
 		}
 		if changed {
-			k.w.SetSize(k.state.SizeW, k.state.SizeH, webview.HintNone)
+			k.w.SetSize(int(state.SizeW), int(state.SizeH), webview.HintNone)
 		}
 
-		err := k.store.Persist(webViewStateKey, k.state)
+		if in.Action.String() == api.ScreenActionPowerOff.String() {
+			state.ScreenPowerState = api.ScreenPowerStateOff
+		}
+		if in.Action.String() == api.ScreenActionPowerOn.String() {
+			state.ScreenPowerState = api.ScreenPowerStateOn
+		}
+
+		err := k.store.Persist(webViewStateKey, state)
 		if err != nil {
 			k.log.Warn("failed to persist store, will not recover after restart", zap.Error(err))
 		}

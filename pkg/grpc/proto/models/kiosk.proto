@@ -4,12 +4,11 @@ package models;
 
 option go_package = "pkg/grpc/models";
 
-message KioskState {
+message KioskRequest {
 	string content  = 1;
 	string title = 2;
 	int64 size_w = 3;
 	int64 size_h = 4;
-
 	EnumScreenAction action = 5;
 }
 
@@ -19,4 +18,19 @@ enum EnumScreenAction {
 	STOP = 2;
 	POWEROFF = 3;
 	POWERON = 4;
+	SCREENSHOT = 5;
+}
+
+enum EnumScreenPowerState {
+	SCREENPOWERSTATEOFF = 0;
+	SCREENPOWERSTATEON = 1;
+}
+
+message KioskRespose {
+	string content  = 1;
+	string title = 2;
+	int64 size_w = 3;
+	int64 size_h = 4;
+	bytes screenshot = 5;
+	EnumScreenPowerState power_state = 6;
 }

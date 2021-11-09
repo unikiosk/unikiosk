@@ -4,12 +4,12 @@ package eventer
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/unikiosk/unikiosk/pkg/api"
 	"go.uber.org/zap"
-
-	"github.com/unikiosk/unikiosk/pkg/models"
 )
 
 var (
@@ -19,13 +19,21 @@ var (
 	// ConsumerGCInterval is the interval at which garbage collection of consumers
 	// occurs
 	ConsumerGCInterval = time.Minute
+
+	// DefaultCallabackTimeout is timeout how long emitter will wait for callaback to produce result
+	DefaultCallabackTimeout = 5 * time.Second
 )
 
 var _ Eventer = &ChannelEventer{}
 
+type EventWrapper struct {
+	Payload  api.Event
+	Callback chan *EventWrapper
+}
+
 type Eventer interface {
-	Subscribe(ctx context.Context) (<-chan *models.Event, error)
-	Emit(event *models.Event) error
+	Subscribe(ctx context.Context) <-chan *EventWrapper
+	Emit(event *EventWrapper) (*EventWrapper, error)
 }
 
 // ChannelEventer is a utility to control broadcast of Events to multiple consumers.
@@ -34,7 +42,7 @@ type ChannelEventer struct {
 	// This channel is never closed, because it's lifetime is tied to the
 	// life of the driver and closing creates some subtile race conditions
 	// between closing it and emitting events.
-	events chan *models.Event
+	events chan *EventWrapper
 
 	// consumers is a slice of eventConsumers to broadcast events to.
 	// access is gaurded by consumersLock RWMutex
@@ -49,7 +57,7 @@ type ChannelEventer struct {
 type eventConsumer struct {
 	timeout time.Duration
 	ctx     context.Context
-	ch      chan *models.Event
+	ch      chan *EventWrapper
 	log     *zap.Logger
 }
 
@@ -57,7 +65,7 @@ type eventConsumer struct {
 // by closing the given stop channel
 func New(ctx context.Context, log *zap.Logger) *ChannelEventer {
 	e := &ChannelEventer{
-		events: make(chan *models.Event),
+		events: make(chan *EventWrapper),
 		ctx:    ctx,
 		log:    log,
 	}
@@ -83,7 +91,7 @@ func (e *ChannelEventer) eventLoop() {
 
 // iterateConsumers will iterate through all consumers and broadcast the event,
 // cleaning up any consumers that have closed their context
-func (e *ChannelEventer) iterateConsumers(event *models.Event) {
+func (e *ChannelEventer) iterateConsumers(event *EventWrapper) {
 	e.consumersLock.Lock()
 	filtered := e.consumers[:0]
 	for _, consumer := range e.consumers {
@@ -99,7 +107,7 @@ func (e *ChannelEventer) iterateConsumers(event *models.Event) {
 		select {
 		case <-time.After(consumer.timeout):
 			filtered = append(filtered, consumer)
-			e.log.Warn("timeout sending event", zap.Any("event", event))
+			e.log.Warn("timeout sending event", zap.Any("event", event.Payload))
 		case <-consumer.ctx.Done():
 			// consumer context finished, filtering it out of loop
 			close(consumer.ch)
@@ -131,7 +139,7 @@ func (e *ChannelEventer) newConsumer(ctx context.Context) *eventConsumer {
 	defer e.consumersLock.Unlock()
 
 	consumer := &eventConsumer{
-		ch:      make(chan *models.Event),
+		ch:      make(chan *EventWrapper),
 		ctx:     ctx,
 		timeout: DefaultSendEventTimeout,
 		log:     e.log,
@@ -142,18 +150,34 @@ func (e *ChannelEventer) newConsumer(ctx context.Context) *eventConsumer {
 }
 
 // Subscribe subscribes to events
-func (e *ChannelEventer) Subscribe(ctx context.Context) (<-chan *models.Event, error) {
+func (e *ChannelEventer) Subscribe(ctx context.Context) <-chan *EventWrapper {
 	consumer := e.newConsumer(ctx)
-	return consumer.ch, nil
+	return consumer.ch
 }
 
 // Emit emits event to all subscribers
-func (e *ChannelEventer) Emit(event *models.Event) error {
+func (e *ChannelEventer) Emit(event *EventWrapper) (*EventWrapper, error) {
+	if event.Callback == nil {
+		event.Callback = make(chan *EventWrapper)
+	}
+	callbackTimout := time.NewTimer(DefaultCallabackTimeout)
+
 	select {
 	case <-e.ctx.Done():
-		return e.ctx.Err()
+		return nil, e.ctx.Err()
+	case <-callbackTimout.C:
+		return nil, fmt.Errorf("callback timeout")
 	case e.events <- event:
-		e.log.Debug("emitting event", zap.Any("event", event))
+		e.log.Warn("emitting event", zap.Any("event", event.Payload))
 	}
-	return nil
+
+	select {
+	case <-e.ctx.Done():
+		return nil, e.ctx.Err()
+	case <-callbackTimout.C:
+		return nil, fmt.Errorf("callback timeout")
+	case v := <-event.Callback:
+		return v, nil
+	}
+
 }
