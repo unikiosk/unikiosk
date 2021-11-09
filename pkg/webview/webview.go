@@ -1,8 +1,8 @@
 package webview
 
 /*
-#cgo darwin LDFLAGS: -framework CoreGraphics
-#cgo linux pkg-config: x11
+#cgo darwin LDFLAGS: -framework CoreGraphics -L/usr/include/X11 -lextensions
+#cgo linux pkg-config: x11 xkbcommon x11-xcb xcursor xfixes
 #if defined(__APPLE__)
 #include <CoreGraphics/CGDisplayConfiguration.h>
 int display_width() {
@@ -57,6 +57,7 @@ import (
 	"github.com/unikiosk/unikiosk/pkg/eventer"
 	"github.com/unikiosk/unikiosk/pkg/models"
 	"github.com/unikiosk/unikiosk/pkg/store"
+	"github.com/unikiosk/unikiosk/pkg/util/shell"
 )
 
 var webViewStateKey = "webview"
@@ -77,6 +78,7 @@ type kiosk struct {
 
 type Kiosk interface {
 	Run(ctx context.Context) error
+	PowerOff() error
 	Close()
 }
 
@@ -114,6 +116,24 @@ func New(log *zap.Logger, config *config.Config, events eventer.Eventer, store s
 
 func (k *kiosk) Close() {
 	k.w.Destroy()
+}
+
+// TODO: Power off/on should be better done via CGO
+// https://stackoverflow.com/questions/60477195/turning-off-monitor-in-c
+// But somehow I didn't managed to get right bindings.
+
+// PowerOff - powers off the screen
+func (k *kiosk) PowerOff() error {
+	// xset -display :0.0 dpms force off
+	_, _, err := shell.Exec("xset -display :0.0 dpms force off")
+	return err
+}
+
+// PowerOn - powers on the screen
+func (k *kiosk) PowerOn() error {
+	// xset -display :0.0 dpms force off
+	_, _, err := shell.Exec("xset -display :0.0 dpms force on")
+	return err
 }
 
 func (k *kiosk) startOrRestore() error {
@@ -171,7 +191,6 @@ func (k *kiosk) runDispatcher(ctx context.Context) error {
 	}
 
 	for event := range listener {
-
 		// act only on requests to reload webview
 		if event.Type == models.EventTypeWebViewUpdate && event.KioskMode == models.KioskModeDirect {
 			k.log.Info("direct webview reload")
@@ -194,6 +213,16 @@ func (k *kiosk) runDispatcher(ctx context.Context) error {
 			targetUrl.Host = proxyUrl.Host
 			event.Payload.Content = strings.Replace(targetUrl.String(), "https", "http", 1)
 			k.updateState(ctx, event.Payload)
+		}
+		// if power action event
+		if event.Type == models.EventTypePowerAction {
+			k.log.Info("power action", zap.String("action", string(event.Payload.Action)))
+			if event.Payload.Action == models.ScreenActionPowerOff {
+				k.PowerOff()
+			}
+			if event.Payload.Action == models.ScreenActionPowerOn {
+				k.PowerOn()
+			}
 		}
 	}
 	return nil

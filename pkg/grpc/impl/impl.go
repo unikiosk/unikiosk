@@ -70,3 +70,20 @@ func (s *KioskServiceGrpcImpl) StartOrUpdate(ctx context.Context, in *models.Kio
 		Error: nil,
 	}, nil
 }
+
+// powerOnOrOff will start or update running kiosk session
+func (s *KioskServiceGrpcImpl) PowerOnOrOff(ctx context.Context, in *models.KioskState) (*service.StartKioskResponse, error) {
+	action := apimodels.ProtoToScreenAction(&in.Action)
+
+	s.events.Emit(&apimodels.Event{
+		Type: apimodels.EventTypePowerAction,
+		Payload: apimodels.KioskState{
+			Action: action,
+		},
+	})
+
+	return &service.StartKioskResponse{
+		State: in,
+		Error: nil,
+	}, nil
+}

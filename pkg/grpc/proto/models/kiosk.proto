@@ -10,11 +10,13 @@ message KioskState {
 	int64 size_w = 3;
 	int64 size_h = 4;
 
-	EnumState state = 5;
+	EnumScreenAction action = 5;
 }
 
-enum EnumState {
-    RUNNING = 0;
-	STOPPED = 1;
-	UNKNOWN = 2;
+enum EnumScreenAction {
+    START = 0;
+	UPDATE = 1;
+	STOP = 2;
+	POWEROFF = 3;
+	POWERON = 4;
 }

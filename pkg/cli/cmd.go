@@ -18,6 +18,7 @@ type config struct {
 	url               string
 	unikioskServerUrl string
 	file              string
+	action            string
 }
 
 // RunCLI returns user CLI
@@ -35,6 +36,7 @@ func RunCLI(ctx context.Context) error {
 	cmd.Flags().StringVarP(&c.url, "url", "u", "https://synpse.net", "Set desired URL to be opened")
 	cmd.Flags().StringVarP(&c.unikioskServerUrl, "server", "s", "localhost:7000", "Set desired URL to be opened")
 	cmd.Flags().StringVarP(&c.file, "file", "f", "", "File to serve")
+	cmd.Flags().StringVarP(&c.action, "action", "a", string(apimodels.ScreenActionUpdate), "Screen action")
 
 	// This will already have global config enriched with values
 	return cmd.ExecuteContext(ctx)
@@ -49,6 +51,19 @@ func run(ctx context.Context, c config, args []string) error {
 
 	client := service.NewKioskServiceClient(conn)
 
+	switch apimodels.ScreenAction(c.action) {
+
+	case apimodels.ScreenActionStart, apimodels.ScreenActionUpdate:
+		return startOrUpdate(ctx, client, c)
+	case apimodels.ScreenActionPowerOff, apimodels.ScreenActionPowerOn:
+		return powerOnOrOff(ctx, client, c)
+	default:
+		return fmt.Errorf("action %s not implemented", c.action)
+
+	}
+}
+
+func startOrUpdate(ctx context.Context, client service.KioskServiceClient, c config) error {
 	payload := c.url
 	if c.file != "" {
 		exists, _ := fileutil.Exist(c.file)
@@ -78,6 +93,25 @@ func run(ctx context.Context, c config, args []string) error {
 		fmt.Println(responseMessage)
 		fmt.Println("==============")
 	}
+	return nil
+}
 
+func powerOnOrOff(ctx context.Context, client service.KioskServiceClient, c config) error {
+	payload := models.KioskState{}
+	switch apimodels.ScreenAction(c.action) {
+	case apimodels.ScreenActionPowerOn:
+		payload.Action = models.EnumScreenAction_POWERON
+	case apimodels.ScreenActionPowerOff:
+		payload.Action = models.EnumScreenAction_POWEROFF
+	}
+
+	if responseMessage, e := client.PowerOnOrOff(ctx, &payload); e != nil {
+		fmt.Println("failed to send command to unikiosk")
+		return nil
+	} else {
+		fmt.Println("Update sent...")
+		fmt.Println(responseMessage)
+		fmt.Println("==============")
+	}
 	return nil
 }
