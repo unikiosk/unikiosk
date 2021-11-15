@@ -20,6 +20,7 @@ import (
 	"github.com/unikiosk/unikiosk/pkg/config"
 	"github.com/unikiosk/unikiosk/pkg/eventer"
 	"github.com/unikiosk/unikiosk/pkg/store"
+	"github.com/unikiosk/unikiosk/pkg/util/recover"
 	"github.com/unikiosk/unikiosk/pkg/util/shell"
 )
 
@@ -99,10 +100,6 @@ func (k *kiosk) PowerOn() error {
 	if sErr != "" {
 		return fmt.Errorf(sErr)
 	}
-	err = k.startOrRestore()
-	if err != nil {
-		return err
-	}
 
 	return err
 }
@@ -150,7 +147,6 @@ func (k *kiosk) startOrRestore() error {
 	})
 
 	k.w.Run()
-	defer k.w.Destroy()
 
 	return nil
 }
@@ -165,6 +161,8 @@ func (k *kiosk) Run(ctx context.Context) error {
 	// HACK: Webview is not loading page on start due to some race condition. Still need to get to the bottom of it
 	// We emit event to re-load after 2s of the startup hope we will succeed :/
 	go func() {
+		defer recover.Panic(k.log)
+
 		time.Sleep(time.Second * 2)
 		state := k.getCurrentState()
 		k.log.Info("emit", zap.String("content", state.Content))
@@ -188,6 +186,7 @@ func (k *kiosk) Run(ctx context.Context) error {
 }
 
 func (k *kiosk) runDispatcher(ctx context.Context) error {
+	defer recover.Panic(k.log)
 	listener := k.events.Subscribe(ctx)
 
 	for event := range listener {

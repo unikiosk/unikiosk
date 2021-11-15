@@ -12,6 +12,7 @@ import (
 	"github.com/unikiosk/unikiosk/pkg/grpc"
 	"github.com/unikiosk/unikiosk/pkg/proxy"
 	"github.com/unikiosk/unikiosk/pkg/store/disk"
+	"github.com/unikiosk/unikiosk/pkg/util/recover"
 	"github.com/unikiosk/unikiosk/pkg/web"
 	"github.com/unikiosk/unikiosk/pkg/webview"
 )
@@ -78,13 +79,16 @@ func (s *ServiceManager) Run(ctx context.Context) error {
 
 	// due to nature of go routines execution we use atomic.Ready to start webview only when all other subsystems are ready
 	g.Go(func() error {
+		defer recover.Panic(s.log)
 		return s.grpc.Run(ctx)
 	})
 
 	g.Go(func() error {
+		defer recover.Panic(s.log)
 		return s.web.Run(ctx)
 	})
 	g.Go(func() error {
+		defer recover.Panic(s.log)
 		return s.proxy.Run(ctx)
 	})
 

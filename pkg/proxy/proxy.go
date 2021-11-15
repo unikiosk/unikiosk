@@ -20,6 +20,7 @@ import (
 	"github.com/unikiosk/unikiosk/pkg/config"
 	"github.com/unikiosk/unikiosk/pkg/eventer"
 	"github.com/unikiosk/unikiosk/pkg/store"
+	"github.com/unikiosk/unikiosk/pkg/util/recover"
 )
 
 var proxyStateKey = "proxy"
@@ -81,6 +82,8 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config, events eve
 	}
 
 	go func() {
+		defer recover.Panic(p.log)
+
 		err := p.runSync(ctx)
 		if err != nil {
 			p.log.Debug("failed proxy reload", zap.Error(err))
