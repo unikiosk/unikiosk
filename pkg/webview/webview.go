@@ -258,8 +258,10 @@ func (k *kiosk) updateState(ctx context.Context, in api.KioskRequest) {
 
 	// Dispatch is async, so we need to persist inside of it :/ this is not ideal as context are mixed
 	k.w.Dispatch(func() {
-		state.Content = in.Content
-		k.w.Navigate(state.Content)
+		if in.Content != "" && state.Content != in.Content {
+			state.Content = in.Content
+			k.w.Navigate(state.Content)
+		}
 
 		if in.Title != "" && state.Title != in.Title {
 			k.w.Navigate(in.Title)
