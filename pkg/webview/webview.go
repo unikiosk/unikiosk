@@ -258,8 +258,10 @@ func (k *kiosk) updateState(ctx context.Context, in api.KioskRequest) {
 	// Dispatch is async, so we need to persist inside of it :/ this is not ideal as context are mixed
 	k.w.Dispatch(func() {
 		if in.Content != "" {
+			k.log.Info("refresh webview", zap.String("incoming", in.Content), zap.String("current", state.Content))
+			k.w.Navigate(in.Content)
 			state.Content = in.Content
-			k.w.Navigate(state.Content)
+			//k.w.Init("window.location.reload()")
 		}
 
 		if in.Title != "" && state.Title != in.Title {
