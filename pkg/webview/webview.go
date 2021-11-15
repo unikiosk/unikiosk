@@ -273,43 +273,41 @@ func (k *kiosk) updateState(ctx context.Context, in api.KioskRequest, urlHash st
 	state := k.getCurrentState()
 
 	// Dispatch is async, so we need to persist inside of it :/ this is not ideal as context are mixed
-	k.w.Dispatch(func() {
-		if in.Content != "" && urlHash != state.ContentHash {
-			k.log.Info("refresh webview", zap.String("incoming", in.Content), zap.String("current", state.Content))
-			k.w.Navigate(in.Content)
+	if in.Content != "" && urlHash != state.ContentHash {
+		k.log.Info("refresh webview", zap.String("incoming", in.Content), zap.String("current", state.Content))
+		k.w.Navigate(in.Content)
 
-			state.Content = in.Content
-			state.ContentHash = urlHash
-		}
+		state.Content = in.Content
+		state.ContentHash = urlHash
+	}
 
-		if in.Title != "" && state.Title != in.Title {
-			k.w.SetTitle(in.Title)
-			state.Title = in.Title
-		}
+	if in.Title != "" && state.Title != in.Title {
+		k.w.SetTitle(in.Title)
+		state.Title = in.Title
+	}
 
-		var changed bool
-		if in.SizeW != 0 && state.SizeW != in.SizeW {
-			state.SizeW = in.SizeW
-			changed = true
-		}
-		if in.SizeH != 0 && state.SizeH != in.SizeH {
-			state.SizeH = in.SizeH
-			changed = true
-		}
-		if changed {
-			k.w.SetSize(int(state.SizeW), int(state.SizeH), webview.HintNone)
-		}
+	var changed bool
+	if in.SizeW != 0 && state.SizeW != in.SizeW {
+		state.SizeW = in.SizeW
+		changed = true
+	}
+	if in.SizeH != 0 && state.SizeH != in.SizeH {
+		state.SizeH = in.SizeH
+		changed = true
+	}
+	if changed {
+		k.w.SetSize(int(state.SizeW), int(state.SizeH), webview.HintNone)
+	}
 
-		if in.Action.String() == api.ScreenActionPowerOff.String() {
-			state.ScreenPowerState = api.ScreenPowerStateOff
-		}
-		if in.Action.String() == api.ScreenActionPowerOn.String() {
-			state.ScreenPowerState = api.ScreenPowerStateOn
-		}
+	if in.Action.String() == api.ScreenActionPowerOff.String() {
+		state.ScreenPowerState = api.ScreenPowerStateOff
+	}
+	if in.Action.String() == api.ScreenActionPowerOn.String() {
+		state.ScreenPowerState = api.ScreenPowerStateOn
+	}
 
-		err := k.store.Persist(webViewStateKey, state)
-		if err != nil {
-			k.log.Warn("failed to persist store, will not recover after restart", zap.Error(err))
-		}
-	})
+	err := k.store.Persist(webViewStateKey, state)
+	if err != nil {
+		k.log.Warn("failed to persist store, will not recover after restart", zap.Error(err))
+	}
 }
