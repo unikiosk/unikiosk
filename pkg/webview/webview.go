@@ -2,6 +2,7 @@ package webview
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"image/png"
 	"net/url"
@@ -193,39 +194,35 @@ func (k *kiosk) runDispatcher(ctx context.Context) error {
 		e := event.Payload
 		callback := event.Callback
 
+		hash := k.getURLHash(e.Request.Content)
+
 		// act only on requests to reload webview
 		if e.Type == api.EventTypeWebViewUpdate && e.KioskMode == api.KioskModeDirect {
 			k.log.Info("direct webview reload")
-			k.updateState(ctx, e.Request)
+
+			k.updateState(ctx, e.Request, hash)
 		}
 		// act only on requests to reload webview iin proxy mode
 		if e.Type == api.EventTypeWebViewUpdate && e.KioskMode == api.KioskModeProxy {
 			k.log.Info("proxy webview reload")
-			// replace original URL with proxy address while preserving path
-			// in addition tls is handled in proxy, so drop https
-			targetUrl, err := url.Parse(e.Request.Content)
+			url, err := k.getProxyURL(event.Payload.Request)
 			if err != nil {
 				return err
 			}
-			proxyUrl, err := url.Parse(k.config.DefaultProxyURL)
-			if err != nil {
-				return err
-			}
+			e.Request.Content = url
 
-			targetUrl.Host = proxyUrl.Host
-			e.Request.Content = strings.Replace(targetUrl.String(), "https", "http", 1)
-			k.updateState(ctx, e.Request)
+			k.updateState(ctx, e.Request, hash)
 		}
 		// if power action event
 		if e.Type == api.EventTypePowerAction {
 			k.log.Info("power action", zap.String("action", e.Request.Action.String()))
 			if e.Request.Action == api.ScreenActionPowerOff {
 				k.PowerOff()
-				k.updateState(ctx, e.Request)
+				k.updateState(ctx, e.Request, "")
 			}
 			if e.Request.Action == api.ScreenActionPowerOn {
 				k.PowerOn()
-				k.updateState(ctx, e.Request)
+				k.updateState(ctx, e.Request, "")
 			}
 		}
 
@@ -249,22 +246,44 @@ func (k *kiosk) runDispatcher(ctx context.Context) error {
 	return nil
 }
 
-func (k *kiosk) updateState(ctx context.Context, in api.KioskRequest) {
-	k.lock.Lock()
-	defer k.lock.Unlock()
+func (k *kiosk) getProxyURL(in api.KioskRequest) (string, error) {
+	// replace original URL with proxy address while preserving path
+	// in addition tls is handled in proxy, so drop https
+	targetUrl, err := url.Parse(in.Content)
+	if err != nil {
+		return "", err
+	}
+	proxyUrl, err := url.Parse(k.config.DefaultProxyURL)
+	if err != nil {
+		return "", err
+	}
 
+	targetUrl.Host = proxyUrl.Host
+	return strings.Replace(targetUrl.String(), "https", "http", 1), nil
+}
+
+func (k *kiosk) getURLHash(in string) string {
+	h := sha256.New()
+	h.Write([]byte(in))
+
+	return string(h.Sum(nil))
+}
+
+func (k *kiosk) updateState(ctx context.Context, in api.KioskRequest, urlHash string) {
 	state := k.getCurrentState()
 
 	// Dispatch is async, so we need to persist inside of it :/ this is not ideal as context are mixed
 	k.w.Dispatch(func() {
-		if in.Content != "" {
+		if in.Content != "" && urlHash != state.ContentHash {
 			k.log.Info("refresh webview", zap.String("incoming", in.Content), zap.String("current", state.Content))
 			k.w.Navigate(in.Content)
+
 			state.Content = in.Content
+			state.ContentHash = urlHash
 		}
 
 		if in.Title != "" && state.Title != in.Title {
-			k.w.Navigate(in.Title)
+			k.w.SetTitle(in.Title)
 			state.Title = in.Title
 		}
 

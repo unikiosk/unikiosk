@@ -6,7 +6,9 @@ const StaticFilePrefix = "data:text/html"
 
 // KioskState respresent current Kiosk state
 type KioskState struct {
-	Content          string
+	Content string
+	// ContentHash is hash of content before it was modified
+	ContentHash      string
 	Title            string
 	SizeW            int64
 	SizeH            int64
