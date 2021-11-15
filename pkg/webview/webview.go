@@ -99,6 +99,10 @@ func (k *kiosk) PowerOn() error {
 	if sErr != "" {
 		return fmt.Errorf(sErr)
 	}
+	err = k.startOrRestore()
+	if err != nil {
+		return err
+	}
 
 	return err
 }
