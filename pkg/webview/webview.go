@@ -261,7 +261,6 @@ func (k *kiosk) updateState(ctx context.Context, in api.KioskRequest) {
 			k.log.Info("refresh webview", zap.String("incoming", in.Content), zap.String("current", state.Content))
 			k.w.Navigate(in.Content)
 			state.Content = in.Content
-			//k.w.Init("window.location.reload()")
 		}
 
 		if in.Title != "" && state.Title != in.Title {
