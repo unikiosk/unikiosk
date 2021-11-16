@@ -13,7 +13,8 @@ Container initiates X session via xinit and starts the service so you don't need
 
 ## Run
 
-Port 7000 is used for remote management (GRPC API). Mounted volume - for state management. Run using Docker:
+Port 7000 is used for remote management (GRPC API). Mounted volume - for state management. 
+Run using Docker:
 
 ```
 docker run -d -v /data/unikiosk:/data -p 7000:7000 quay.io/unikiosk/unikiosk 

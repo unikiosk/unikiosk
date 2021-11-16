@@ -4,4 +4,4 @@ set -x
 
 # TODO: Add server healthcheck here
 
-xinit
+xinit -- -nocursor
