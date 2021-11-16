@@ -87,14 +87,7 @@ func (k *kiosk) PowerOn() error {
 		return fmt.Errorf(sErr)
 	}
 	// this prevents blanking of the screen after it gets on
-	_, sErr, err = shell.Exec("xset -display :0.0 s off")
-	if err != nil {
-		return err
-	}
-	if sErr != "" {
-		return fmt.Errorf(sErr)
-	}
-	_, sErr, err = shell.Exec("xset -display :0.0 s noblank")
+	_, sErr, err = shell.Exec("xset -dpms")
 	if err != nil {
 		return err
 	}
