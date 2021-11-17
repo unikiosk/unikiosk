@@ -16,6 +16,6 @@ const (
 	// In the future we might want to server this from application bundle using our webserver, so flow stays the same
 	EventTypeWebViewUpdate
 
-	// EventTypePowerAction will power off or on the screen
-	EventTypePowerAction
+	// EventTypeAction will execute action
+	EventTypeAction
 )

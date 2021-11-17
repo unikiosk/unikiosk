@@ -33,9 +33,6 @@ func New(log *zap.Logger, config *config.Config, events eventer.Eventer) (*GRPCS
 		return nil, err
 	}
 
-	// server accepts token authentication:
-	// "token" - user or sa token
-
 	opts := []grpc.ServerOption{
 		//grpc.UnaryInterceptor(AuthInterceptor),
 	}

@@ -72,8 +72,56 @@ func (m *KioskResponse) GetError() *models.Error {
 	return nil
 }
 
+type KioskScreenshootResponse struct {
+	Screenshot           *models.KioskScreenshotRespose `protobuf:"bytes,1,opt,name=screenshot,proto3" json:"screenshot,omitempty"`
+	Error                *models.Error                  `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
+	XXX_unrecognized     []byte                         `json:"-"`
+	XXX_sizecache        int32                          `json:"-"`
+}
+
+func (m *KioskScreenshootResponse) Reset()         { *m = KioskScreenshootResponse{} }
+func (m *KioskScreenshootResponse) String() string { return proto.CompactTextString(m) }
+func (*KioskScreenshootResponse) ProtoMessage()    {}
+func (*KioskScreenshootResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_2ba2961ef98e8275, []int{1}
+}
+
+func (m *KioskScreenshootResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_KioskScreenshootResponse.Unmarshal(m, b)
+}
+func (m *KioskScreenshootResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_KioskScreenshootResponse.Marshal(b, m, deterministic)
+}
+func (m *KioskScreenshootResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KioskScreenshootResponse.Merge(m, src)
+}
+func (m *KioskScreenshootResponse) XXX_Size() int {
+	return xxx_messageInfo_KioskScreenshootResponse.Size(m)
+}
+func (m *KioskScreenshootResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_KioskScreenshootResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KioskScreenshootResponse proto.InternalMessageInfo
+
+func (m *KioskScreenshootResponse) GetScreenshot() *models.KioskScreenshotRespose {
+	if m != nil {
+		return m.Screenshot
+	}
+	return nil
+}
+
+func (m *KioskScreenshootResponse) GetError() *models.Error {
+	if m != nil {
+		return m.Error
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*KioskResponse)(nil), "service.KioskResponse")
+	proto.RegisterType((*KioskScreenshootResponse)(nil), "service.KioskScreenshootResponse")
 }
 
 func init() {
@@ -81,22 +129,25 @@ func init() {
 }
 
 var fileDescriptor_2ba2961ef98e8275 = []byte{
-	// 236 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0x2a, 0xc8, 0x4e, 0xd7,
-	0x4f, 0x2f, 0x2a, 0x48, 0xd6, 0x2f, 0x28, 0xca, 0x2f, 0xc9, 0xd7, 0x2f, 0x4e, 0x2d, 0x2a, 0xcb,
-	0x4c, 0x4e, 0xd5, 0xcf, 0xce, 0xcc, 0x2f, 0xce, 0xd6, 0x03, 0x8b, 0x09, 0xb1, 0x43, 0x05, 0xa5,
-	0x14, 0xd1, 0x14, 0xe7, 0xe6, 0xa7, 0xa4, 0xe6, 0x14, 0x23, 0xab, 0x95, 0x52, 0xc2, 0xae, 0x24,
-	0xb5, 0xa8, 0x28, 0xbf, 0xa8, 0x18, 0xa2, 0x46, 0x29, 0x81, 0x8b, 0xd7, 0x1b, 0xa4, 0x25, 0x28,
-	0xb5, 0xb8, 0x20, 0x3f, 0xaf, 0x38, 0x55, 0x48, 0x8b, 0x8b, 0xb5, 0xb8, 0x24, 0xb1, 0x24, 0x55,
-	0x82, 0x51, 0x81, 0x51, 0x83, 0xdb, 0x48, 0x44, 0x0f, 0xa2, 0x4b, 0x0f, 0xa1, 0xaa, 0x38, 0x35,
-	0x08, 0xa2, 0x44, 0x48, 0x99, 0x8b, 0x15, 0x6c, 0x98, 0x04, 0x13, 0x58, 0x2d, 0x2f, 0x4c, 0xad,
-	0x2b, 0x48, 0x30, 0x08, 0x22, 0x67, 0x74, 0x9c, 0x91, 0x8b, 0x07, 0xac, 0x39, 0x18, 0xe2, 0x72,
-	0x21, 0x5b, 0x2e, 0xde, 0xe2, 0x92, 0xc4, 0xa2, 0x12, 0xff, 0xa2, 0xd0, 0x82, 0x14, 0x90, 0x31,
-	0xe8, 0x76, 0x14, 0x96, 0xa6, 0x16, 0x97, 0x48, 0x89, 0xe9, 0x41, 0xbd, 0xaa, 0x87, 0xea, 0x40,
-	0x1b, 0x2e, 0x9e, 0x80, 0xfc, 0xf2, 0xd4, 0x22, 0xff, 0x3c, 0xff, 0x22, 0xff, 0xb4, 0x34, 0x12,
-	0x75, 0x5b, 0x71, 0x71, 0x05, 0x27, 0x17, 0xa5, 0xa6, 0xe6, 0x15, 0x67, 0xe4, 0x97, 0x90, 0xa6,
-	0xd7, 0x49, 0x28, 0x4a, 0x00, 0x1e, 0xa2, 0x50, 0x15, 0x49, 0x6c, 0xe0, 0x60, 0x34, 0x06, 0x04,
-	0x00, 0x00, 0xff, 0xff, 0xca, 0xc1, 0x5c, 0xfd, 0xbc, 0x01, 0x00, 0x00,
+	// 274 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x91, 0xc1, 0x4a, 0xc3, 0x40,
+	0x10, 0x86, 0x89, 0x50, 0x85, 0xb1, 0x05, 0x59, 0x44, 0x42, 0x0e, 0x62, 0xe3, 0x45, 0x3c, 0x6c,
+	0xa4, 0x5e, 0xd5, 0x83, 0x20, 0x1e, 0x3c, 0x44, 0x22, 0x5e, 0x3c, 0x59, 0xd3, 0x69, 0x2d, 0xd1,
+	0xec, 0x3a, 0x33, 0xea, 0xd1, 0x97, 0xf4, 0x81, 0x24, 0xbb, 0x49, 0xda, 0x94, 0x0a, 0x7a, 0x9d,
+	0x7c, 0xdf, 0xfe, 0x99, 0x7f, 0x20, 0xb6, 0xc5, 0x2c, 0x99, 0x91, 0xcd, 0x13, 0x4b, 0x46, 0x4c,
+	0xc2, 0x48, 0x1f, 0xf3, 0x1c, 0x93, 0x62, 0x6e, 0xb8, 0xd0, 0x6e, 0xa6, 0xb6, 0xea, 0x61, 0x34,
+	0x5c, 0x81, 0x5f, 0xcd, 0x04, 0x5f, 0x78, 0x99, 0x8d, 0xe2, 0xf5, 0x08, 0x12, 0x19, 0x62, 0xcf,
+	0xc4, 0x8f, 0x30, 0xb8, 0xa9, 0x94, 0x0c, 0xd9, 0x9a, 0x92, 0x51, 0x1d, 0x43, 0x8f, 0x65, 0x2c,
+	0x18, 0x06, 0x07, 0xc1, 0xd1, 0xf6, 0x68, 0x57, 0x7b, 0x4b, 0x2f, 0x28, 0xc6, 0xcc, 0x23, 0xea,
+	0x10, 0x7a, 0xee, 0xb1, 0x70, 0xc3, 0xb1, 0x83, 0x86, 0xbd, 0xaa, 0x86, 0x99, 0xff, 0x16, 0x7f,
+	0x41, 0xe8, 0xdc, 0xbb, 0x9c, 0x10, 0x4b, 0x7e, 0x36, 0x46, 0xda, 0xb0, 0x0b, 0x00, 0x6e, 0xc6,
+	0x52, 0x27, 0xee, 0x77, 0x12, 0x5b, 0x4b, 0x9a, 0xec, 0x25, 0xe3, 0x4f, 0x3f, 0x30, 0xfa, 0x0e,
+	0xa0, 0xef, 0xdf, 0xf2, 0xd5, 0xa9, 0x73, 0x18, 0xb0, 0x8c, 0x49, 0x52, 0xba, 0xb7, 0x93, 0x6a,
+	0x8f, 0xd5, 0x25, 0xdf, 0xde, 0x91, 0x25, 0xda, 0xd3, 0x75, 0xd7, 0xba, 0xdb, 0xd0, 0x19, 0xf4,
+	0x6f, 0xcd, 0x27, 0x52, 0x5a, 0xa6, 0x94, 0x4e, 0xa7, 0xff, 0xb4, 0xaf, 0x01, 0x16, 0x3b, 0xfd,
+	0xe2, 0x0e, 0xbb, 0xee, 0x9a, 0xe6, 0x4e, 0x82, 0x4b, 0xf5, 0xb0, 0xd3, 0xde, 0xb7, 0xc6, 0x9f,
+	0x36, 0xdd, 0x51, 0x4f, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0x55, 0xa5, 0xf3, 0xf5, 0x4a, 0x02,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -113,7 +164,7 @@ const _ = grpc.SupportPackageIsVersion6
 type KioskServiceClient interface {
 	StartOrUpdate(ctx context.Context, in *models.KioskRequest, opts ...grpc.CallOption) (*KioskResponse, error)
 	PowerOnOrOff(ctx context.Context, in *models.KioskRequest, opts ...grpc.CallOption) (*KioskResponse, error)
-	Screenshot(ctx context.Context, in *models.KioskRequest, opts ...grpc.CallOption) (*KioskResponse, error)
+	Screenshot(ctx context.Context, in *models.KioskRequest, opts ...grpc.CallOption) (KioskService_ScreenshotClient, error)
 }
 
 type kioskServiceClient struct {
@@ -142,20 +193,43 @@ func (c *kioskServiceClient) PowerOnOrOff(ctx context.Context, in *models.KioskR
 	return out, nil
 }
 
-func (c *kioskServiceClient) Screenshot(ctx context.Context, in *models.KioskRequest, opts ...grpc.CallOption) (*KioskResponse, error) {
-	out := new(KioskResponse)
-	err := c.cc.Invoke(ctx, "/service.KioskService/Screenshot", in, out, opts...)
+func (c *kioskServiceClient) Screenshot(ctx context.Context, in *models.KioskRequest, opts ...grpc.CallOption) (KioskService_ScreenshotClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_KioskService_serviceDesc.Streams[0], "/service.KioskService/Screenshot", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &kioskServiceScreenshotClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type KioskService_ScreenshotClient interface {
+	Recv() (*KioskScreenshootResponse, error)
+	grpc.ClientStream
+}
+
+type kioskServiceScreenshotClient struct {
+	grpc.ClientStream
+}
+
+func (x *kioskServiceScreenshotClient) Recv() (*KioskScreenshootResponse, error) {
+	m := new(KioskScreenshootResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // KioskServiceServer is the server API for KioskService service.
 type KioskServiceServer interface {
 	StartOrUpdate(context.Context, *models.KioskRequest) (*KioskResponse, error)
 	PowerOnOrOff(context.Context, *models.KioskRequest) (*KioskResponse, error)
-	Screenshot(context.Context, *models.KioskRequest) (*KioskResponse, error)
+	Screenshot(*models.KioskRequest, KioskService_ScreenshotServer) error
 }
 
 // UnimplementedKioskServiceServer can be embedded to have forward compatible implementations.
@@ -168,8 +242,8 @@ func (*UnimplementedKioskServiceServer) StartOrUpdate(ctx context.Context, req *
 func (*UnimplementedKioskServiceServer) PowerOnOrOff(ctx context.Context, req *models.KioskRequest) (*KioskResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PowerOnOrOff not implemented")
 }
-func (*UnimplementedKioskServiceServer) Screenshot(ctx context.Context, req *models.KioskRequest) (*KioskResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Screenshot not implemented")
+func (*UnimplementedKioskServiceServer) Screenshot(req *models.KioskRequest, srv KioskService_ScreenshotServer) error {
+	return status.Errorf(codes.Unimplemented, "method Screenshot not implemented")
 }
 
 func RegisterKioskServiceServer(s *grpc.Server, srv KioskServiceServer) {
@@ -212,22 +286,25 @@ func _KioskService_PowerOnOrOff_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _KioskService_Screenshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(models.KioskRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _KioskService_Screenshot_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(models.KioskRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(KioskServiceServer).Screenshot(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/service.KioskService/Screenshot",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KioskServiceServer).Screenshot(ctx, req.(*models.KioskRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(KioskServiceServer).Screenshot(m, &kioskServiceScreenshotServer{stream})
+}
+
+type KioskService_ScreenshotServer interface {
+	Send(*KioskScreenshootResponse) error
+	grpc.ServerStream
+}
+
+type kioskServiceScreenshotServer struct {
+	grpc.ServerStream
+}
+
+func (x *kioskServiceScreenshotServer) Send(m *KioskScreenshootResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 var _KioskService_serviceDesc = grpc.ServiceDesc{
@@ -242,11 +319,13 @@ var _KioskService_serviceDesc = grpc.ServiceDesc{
 			MethodName: "PowerOnOrOff",
 			Handler:    _KioskService_PowerOnOrOff_Handler,
 		},
+	},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "Screenshot",
-			Handler:    _KioskService_Screenshot_Handler,
+			StreamName:    "Screenshot",
+			Handler:       _KioskService_Screenshot_Handler,
+			ServerStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "pkg/grpc/proto/service/kiosk.proto",
 }

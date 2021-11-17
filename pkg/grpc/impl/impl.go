@@ -1,8 +1,11 @@
 package impl
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"log"
 	"strings"
 
 	"go.uber.org/zap"
@@ -124,7 +127,7 @@ func (s *KioskServiceGrpcImpl) PowerOnOrOff(ctx context.Context, in *models.Kios
 	// update proxy, and proxy will update webview
 	callback, err := s.events.Emit(&eventer.EventWrapper{
 		Payload: api.Event{
-			Type:    api.EventTypePowerAction,
+			Type:    api.EventTypeAction,
 			Request: api.ProtoKioskRequestToModels(in),
 		},
 	})
@@ -139,6 +142,7 @@ func (s *KioskServiceGrpcImpl) PowerOnOrOff(ctx context.Context, in *models.Kios
 				SizeW:      callback.Payload.Response.SizeW,
 				SizeH:      callback.Payload.Response.SizeH,
 				PowerState: models.EnumScreenPowerState(callback.Payload.Response.ScreenPowerState),
+				Screenshot: callback.Payload.Response.Screenshot,
 			},
 			Error: nil,
 		}, nil
@@ -147,33 +151,55 @@ func (s *KioskServiceGrpcImpl) PowerOnOrOff(ctx context.Context, in *models.Kios
 	return nil, fmt.Errorf("unknown error")
 }
 
-// powerOnOrOff will start or update running kiosk session
-func (s *KioskServiceGrpcImpl) Screenshot(ctx context.Context, in *models.KioskRequest) (*service.KioskResponse, error) {
+// Screenshot stream screenshot image
+func (s *KioskServiceGrpcImpl) Screenshot(in *models.KioskRequest, srv service.KioskService_ScreenshotServer) error {
+	s.log.Debug("screenshot taken")
 	// update proxy, and proxy will update webview
 	callback, err := s.events.Emit(&eventer.EventWrapper{
 		Payload: api.Event{
-			Type:    api.EventTypePowerAction,
+			Type:    api.EventTypeAction,
 			Request: api.ProtoKioskRequestToModels(in),
 		},
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if callback != nil {
-		for response := range callback.Callback {
-			return &service.KioskResponse{
-				State: &models.KioskRespose{
-					Content:    response.Payload.Response.Content,
-					Title:      response.Payload.Response.Title,
-					SizeW:      response.Payload.Response.SizeW,
-					SizeH:      callback.Payload.Response.SizeH,
-					PowerState: models.EnumScreenPowerState(callback.Payload.Response.ScreenPowerState),
-					Screenshot: callback.Payload.Response.Screenshot,
+
+	screenshot := callback.Payload.Response.Screenshot
+	screenshotBuf := bytes.NewBuffer(screenshot)
+
+	bufferSize := 64 * 1024 //64KiB
+	buff := make([]byte, bufferSize)
+	for {
+		bytesRead, err := screenshotBuf.Read(buff)
+		if err != nil {
+			if err != io.EOF {
+				err := srv.Send(&service.KioskScreenshootResponse{
+					Error: &models.Error{
+						Code:    "0",
+						Message: err.Error(),
+					},
+				})
+				return err
+			}
+			break
+		}
+		err = srv.Send(&service.KioskScreenshootResponse{
+			Screenshot: &models.KioskScreenshotRespose{
+				Screenshot: buff[:bytesRead],
+			},
+		})
+		if err != nil {
+			log.Println("error while sending chunk:", err)
+			err = srv.Send(&service.KioskScreenshootResponse{
+				Error: &models.Error{
+					Code:    "0",
+					Message: err.Error(),
 				},
-				Error: nil,
-			}, nil
+			})
+			return err
 		}
 	}
 
-	return nil, fmt.Errorf("unknown error")
+	return nil
 }

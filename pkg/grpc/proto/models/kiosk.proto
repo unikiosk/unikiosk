@@ -34,3 +34,7 @@ message KioskRespose {
 	bytes screenshot = 5;
 	EnumScreenPowerState power_state = 6;
 }
+
+message KioskScreenshotRespose {
+	bytes screenshot = 1;
+}

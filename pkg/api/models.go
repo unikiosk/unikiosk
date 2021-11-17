@@ -14,6 +14,8 @@ type KioskState struct {
 	SizeH            int64
 	ScreenPowerState ScreenPowerState
 	KioskMode        KioskMode
+
+	Screenshot []byte
 }
 
 // KioskRequest represents request to interact with kiosk. It should match protoc spec
