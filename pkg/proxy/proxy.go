@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -113,6 +114,7 @@ func (p *proxy) getProxyHandler(u *url.URL) (http.Handler, error) {
 }
 
 func (p *proxy) Director(req *http.Request) {
+	spew.Dump(req.Host)
 	for k, v := range p.config.ProxyHeaders {
 		req.Header.Set(k, v)
 	}
@@ -189,48 +191,49 @@ func (p *proxy) runSync(ctx context.Context) error {
 	listener := p.events.Subscribe(ctx)
 
 	for event := range listener {
+		p.log.Debug("reload proxy")
+		if event.Payload.Type != api.EventTypeProxyUpdate {
+			continue
+		}
+
 		e := event.Payload
 		callback := event.Callback
-		// act only on requests to reload webview
-		if p.config.KioskMode == api.KioskModeProxy &&
-			e.Type == api.EventTypeProxyUpdate {
-			// create new server object and override existing one
-			u, err := url.Parse(e.Request.Content)
-			if err != nil {
-				p.log.Error("failed to parse target URL",
-					zap.String("url", e.Request.Content),
-					zap.Error(err),
-				)
-				continue
-			}
-			p.targetURLMu.Lock()
-			p.targetURL = u
-			p.targetURLMu.Unlock()
 
-			err = p.store.Persist(proxyStateKey, api.KioskState{
-				Content: u.String(),
-			})
-			if err != nil {
-				p.log.Warn("failed to persist proxy state, will fails to recover")
-			}
+		// create new server object and override existing one
+		u, err := url.Parse(e.Request.Content)
+		if err != nil {
+			p.log.Error("failed to parse target URL",
+				zap.String("url", e.Request.Content),
+				zap.Error(err),
+			)
+			continue
+		}
+		p.targetURLMu.Lock()
+		p.targetURL = u
+		p.targetURLMu.Unlock()
 
-			// override webview back to proxy as we might be in file serve mode
-			_, err = p.events.Emit(&eventer.EventWrapper{
-				Payload: api.Event{
-					Type:      api.EventTypeWebViewUpdate,
-					KioskMode: api.KioskModeProxy,
-					Request: api.KioskRequest{
-						Content: p.targetURL.String(),
-					},
+		err = p.store.Persist(proxyStateKey, api.KioskState{
+			Content: u.String(),
+		})
+		if err != nil {
+			p.log.Warn("failed to persist proxy state, will fails to recover")
+		}
+
+		// override webview back to proxy as we might be in file serve mode
+		_, err = p.events.Emit(&eventer.EventWrapper{
+			Payload: api.Event{
+				Type: api.EventTypeWebViewUpdate,
+				Request: api.KioskRequest{
+					Content: p.targetURL.String(),
 				},
-				// pipe in callback
-				Callback: callback,
-			})
-			if err != nil {
-				p.log.Error("failed to emit webview update event",
-					zap.Error(err),
-				)
-			}
+			},
+			// pipe in callback
+			Callback: callback,
+		})
+		if err != nil {
+			p.log.Error("failed to emit webview update event",
+				zap.Error(err),
+			)
 		}
 	}
 	return nil

@@ -1,10 +1,11 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
-
-	"github.com/unikiosk/unikiosk/pkg/api"
+	"github.com/phayes/freeport"
 )
 
 type Config struct {
@@ -14,7 +15,7 @@ type Config struct {
 	// ProxyServerAddr defines address to which Proxy should bind. It handles all requests and sends them to either our webserver (8081) or to user provided URL.
 	// Proxy purpose is to inject headers, like authentication.
 	// Once proxy destination changes, webview will need to be triggered reload
-	ProxyServerAddr string `yaml:"proxyServerAddr,omitempty" envconfig:"PROXY_SERVER_ADDR"  default:":8080"` // Static port for proxy. We need static port so we can recover URLs after shutdown
+	ProxyServerAddr string `yaml:"proxyServerAddr,omitempty" envconfig:"PROXY_SERVER_ADDR"  default:""` // Default -random
 	// WebServerAddr - address of where internal web server binds
 	WebServerAddr string `yaml:"webServerAddr,omitempty" envconfig:"WEB_SERVER_ADDR"  default:":8081"` // web server bind port
 
@@ -28,9 +29,6 @@ type Config struct {
 	// ProxyHeaders is key:value pairs of headers proxy will inject into requests. Example: "red:1,green:2,blue:3"
 	ProxyHeaders map[string]string `yaml:"proxyHeaders,omitempty" envconfig:"PROXY_HEADERS"  default:""`
 
-	// other variables
-	// KioskMode defines if we should use proxy or not for rendering content
-	KioskMode api.KioskMode `yaml:"kioskMode,omitempty" envconfig:"KIOSK_MODE"  default:"direct"`
 	// LogLevel defines log level. Options: info, debug, trace
 	LogLevel string `yaml:"logLevel,omitempty" envconfig:"LOG_LEVEL"  default:"debug"`
 	// StateDir defines where services keeps state
@@ -49,6 +47,14 @@ func Load() (*Config, error) {
 	err := envconfig.Process("", c)
 	if err != nil {
 		return c, err
+	}
+
+	if c.ProxyServerAddr == "" {
+		port, err := freeport.GetFreePort()
+		if err != nil {
+			return nil, fmt.Errorf("failed to allocate free port: %w", err)
+		}
+		c.ProxyServerAddr = fmt.Sprintf(":%d", port)
 	}
 
 	// TODO: add check if user provides full bind URL for proxy server address

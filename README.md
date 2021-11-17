@@ -41,11 +41,6 @@ PROXY_HEADERS="red:1,blue:2"
 
 # log level
 LOG_LEVEL=info
-
-# Kiosk mode. Options: direct, proxy. This option will tell if to load webpage directly using webview or via proxy. 
-# Some webpages do not like being served via reverse proxy due to fact how they handle assets urls (Jenkins and Prometheus are good examples).
-# in cases like this you can use direct mode.
-KIOSK_MODE=proxy
 ```
 
 ## Roadmap

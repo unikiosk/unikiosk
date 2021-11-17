@@ -6,9 +6,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"image/png"
-	"net/url"
-	"strings"
-	"time"
 
 	"github.com/kbinani/screenshot"
 	"github.com/webview/webview"
@@ -121,6 +118,8 @@ func (k *kiosk) Screenshot() ([]byte, error) {
 
 func (k *kiosk) startOrRestore() error {
 	w := webview.New(true)
+	k.log.Info("set proxy", zap.String("proxy", k.config.DefaultProxyURL))
+	w.Proxy(k.config.DefaultProxyURL, []string{})
 	k.w = w
 
 	state := k.getCurrentState()
@@ -151,25 +150,24 @@ func (k *kiosk) Run(ctx context.Context) error {
 
 	// HACK: Webview is not loading page on start due to some race condition. Still need to get to the bottom of it
 	// We emit event to re-load after 2s of the startup hope we will succeed :/
-	go func() {
-		defer recover.Panic(k.log)
-
-		time.Sleep(time.Second * 2)
-		state := k.getCurrentState()
-		k.log.Info("emit", zap.String("content", state.Content))
-		_, _ = k.events.Emit(&eventer.EventWrapper{
-			Payload: api.Event{
-				Type:      api.EventTypeWebViewUpdate,
-				KioskMode: api.KioskModeDirect,
-				Request: api.KioskRequest{
-					Content: state.Content,
-					Title:   state.Title,
-					SizeW:   state.SizeW,
-					SizeH:   state.SizeH,
-				},
-			},
-		})
-	}()
+	//go func() {
+	//	defer recover.Panic(k.log)
+	//
+	//	time.Sleep(time.Second * 2)
+	//	state := k.getCurrentState()
+	//	k.log.Info("emit", zap.String("content", state.Content))
+	//	_, _ = k.events.Emit(&eventer.EventWrapper{
+	//		Payload: api.Event{
+	//			Type: api.EventTypeWebViewUpdate,
+	//			Request: api.KioskRequest{
+	//				Content: state.Content,
+	//				Title:   state.Title,
+	//				SizeW:   state.SizeW,
+	//				SizeH:   state.SizeH,
+	//			},
+	//		},
+	//	})
+	//}()
 
 	for {
 		k.startOrRestore()
@@ -190,27 +188,21 @@ func (k *kiosk) runDispatcher(ctx context.Context) {
 
 func (k *kiosk) dispatch(ctx context.Context, event *eventer.EventWrapper) error {
 	e := event.Payload
+	if e.Type != api.EventTypeWebViewUpdate && e.Type != api.EventTypeAction {
+		return nil
+	}
+
 	callback := event.Callback
 
 	hash := k.getURLHash(e.Request.Content)
 
 	// act only on requests to reload webview
-	if e.Type == api.EventTypeWebViewUpdate && e.KioskMode == api.KioskModeDirect {
-		k.log.Info("direct webview reload")
+	if e.Type == api.EventTypeWebViewUpdate {
+		k.log.Info("webview reload")
 
 		k.updateState(ctx, e.Request, hash)
 	}
-	// act only on requests to reload webview iin proxy mode
-	if e.Type == api.EventTypeWebViewUpdate && e.KioskMode == api.KioskModeProxy {
-		k.log.Info("proxy webview reload")
-		url, err := k.getProxyURL(event.Payload.Request)
-		if err != nil {
-			return err
-		}
-		e.Request.Content = url
 
-		k.updateState(ctx, e.Request, hash)
-	}
 	// if power action event
 	if e.Type == api.EventTypeAction {
 		k.log.Info("execute action", zap.String("type", e.Request.Action.String()))
@@ -256,22 +248,6 @@ func (k *kiosk) dispatch(ctx context.Context, event *eventer.EventWrapper) error
 	}
 	callback <- result
 	return nil
-}
-
-func (k *kiosk) getProxyURL(in api.KioskRequest) (string, error) {
-	// replace original URL with proxy address while preserving path
-	// in addition tls is handled in proxy, so drop https
-	targetUrl, err := url.Parse(in.Content)
-	if err != nil {
-		return "", err
-	}
-	proxyUrl, err := url.Parse(k.config.DefaultProxyURL)
-	if err != nil {
-		return "", err
-	}
-
-	targetUrl.Host = proxyUrl.Host
-	return strings.Replace(targetUrl.String(), "https", "http", 1), nil
 }
 
 func (k *kiosk) getURLHash(in string) string {

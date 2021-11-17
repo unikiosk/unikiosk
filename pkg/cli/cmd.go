@@ -15,7 +15,6 @@ import (
 	"github.com/unikiosk/unikiosk/pkg/api"
 	"github.com/unikiosk/unikiosk/pkg/grpc/models"
 	"github.com/unikiosk/unikiosk/pkg/grpc/service"
-	fileutil "github.com/unikiosk/unikiosk/pkg/util/file"
 )
 
 const (
@@ -47,7 +46,7 @@ func RunCLI(ctx context.Context) error {
 
 	cmd.Flags().StringVarP(&c.url, "url", "u", "https://synpse.net", "Set desired URL to be opened")
 	cmd.Flags().StringVarP(&c.unikioskServerUrl, "server", "s", "localhost:7000", "Set desired URL to be opened")
-	cmd.Flags().StringVarP(&c.file, "file", "f", "", "File to serve/or File to write screenshoot")
+	cmd.Flags().StringVarP(&c.file, "file", "f", "", "File to write screenshoot")
 	cmd.Flags().StringVarP(&c.action, "action", "a", "update", "Screen action [start,update,poweron,poweroff]")
 
 	// This will already have global config enriched with values
@@ -78,22 +77,6 @@ func run(ctx context.Context, c config, args []string) error {
 
 func startOrUpdate(ctx context.Context, client service.KioskServiceClient, c config) error {
 	payload := c.url
-	if c.file != "" {
-		exists, _ := fileutil.Exist(c.file)
-		if !exists {
-			return fmt.Errorf("file [%s] not found", c.file)
-		}
-		var err error
-		data, err := ioutil.ReadFile(c.file)
-		if err != nil {
-			return err
-		}
-
-		payload = api.StaticFilePrefix + `,
-		` + string(data) + `
-		`
-	}
-
 	kioskState := models.KioskRequest{
 		Content: payload,
 	}

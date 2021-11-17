@@ -1,10 +1,9 @@
 package api
 
 type Event struct {
-	Type      EventType
-	KioskMode KioskMode
-	Request   KioskRequest
-	Response  KioskResponse
+	Type     EventType
+	Request  KioskRequest
+	Response KioskResponse
 }
 
 type EventType int64
