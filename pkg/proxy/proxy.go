@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/cybozu-go/transocks"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/elazarl/goproxy"
 	"github.com/inconshreveable/go-vhost"
@@ -20,8 +21,6 @@ import (
 	"github.com/unikiosk/unikiosk/pkg/util/recover"
 )
 
-var proxyStateKey = "proxy"
-
 type Proxy interface {
 	Run(ctx context.Context) error
 }
@@ -29,7 +28,8 @@ type Proxy interface {
 type proxy struct {
 	config *config.Config
 	proxy  *goproxy.ProxyHttpServer
-	log    *zap.Logger
+
+	log *zap.Logger
 }
 
 func New(ctx context.Context, log *zap.Logger, config *config.Config) (*proxy, error) {
@@ -125,34 +125,52 @@ func (p *proxy) Run(ctx context.Context) error {
 		}
 	}()
 
+	addr, err := net.ResolveTCPAddr("tcp", p.config.ProxyHTTPSServerAddr)
+	if err != nil {
+		panic(err)
+	}
+
 	// listen to the TLS ClientHello but make it a CONNECT request instead
-	ln, err := net.Listen("tcp", p.config.ProxyHTTPSServerAddr)
+	ln, err := net.ListenTCP("tcp", addr)
 	if err != nil {
 		log.Fatalf("Error listening for https connections - %v", err)
 	}
+
 	for {
-		c, err := ln.Accept()
+		c, err := ln.AcceptTCP()
 		if err != nil {
 			log.Printf("Error accepting new connection - %v", err)
 			continue
 		}
-		go func(c net.Conn) {
+
+		go func(c *net.TCPConn) {
 			tlsConn, err := vhost.TLS(c)
 			if err != nil {
 				log.Printf("Error accepting new connection - %v", err)
-			}
-			spew.Dump(tlsConn)
-			if tlsConn.Host() == "" {
-				log.Printf("Cannot support non-SNI enabled clients")
 				return
 			}
+			originalDest := ""
+			if tlsConn.Host() == "" {
+				log.Printf("Cannot support non-SNI enabled clients. Fallback using `SO_ORIGINAL_DST` or `IP6T_SO_ORIGINAL_DST`")
+				origAddr, err := transocks.GetOriginalDST(c)
+				if err != nil {
+					log.Printf("GetOriginalDST failed - %s", err.Error())
+					return
+				}
+				originalDest = origAddr.String()
+				// TODO getting domain from origAddr, then check whether we should use proxy or not
+			} else {
+				originalDest = tlsConn.Host()
+			}
+			spew.Dump(originalDest)
+
 			connectReq := &http.Request{
 				Method: "CONNECT",
 				URL: &url.URL{
-					Opaque: tlsConn.Host(),
-					Host:   net.JoinHostPort(tlsConn.Host(), "443"),
+					Opaque: originalDest,
+					Host:   net.JoinHostPort(originalDest, "443"),
 				},
-				Host:       tlsConn.Host(),
+				Host:       originalDest,
 				Header:     make(http.Header),
 				RemoteAddr: c.RemoteAddr().String(),
 			}

@@ -74,8 +74,8 @@ func Load() (*Config, error) {
 	}
 
 	// TODO: add check if user provides full bind URL for proxy server address
-	c.DefaultHTTPProxyURL = "http://127.0.0.1" + c.ProxyHTTPServerAddr
-	c.DefaultHTTPSProxyURL = "https://127.0.0.1" + c.ProxyHTTPSServerAddr
+	c.DefaultHTTPProxyURL = "http://localhost" + c.ProxyHTTPServerAddr
+	c.DefaultHTTPSProxyURL = "https://localhost" + c.ProxyHTTPSServerAddr
 
 	// TODO: add check if user provided full bind URL for webserver
 	c.DefaultWebServerURL = "http://0.0.0.0" + c.WebServerAddr
