@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"sync/atomic"
 
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -24,8 +23,6 @@ type Service interface {
 type ServiceManager struct {
 	log    *zap.Logger
 	config *config.Config
-
-	ready atomic.Value
 
 	webview webview.Kiosk
 	web     web.Interface
@@ -57,7 +54,7 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config) (*ServiceM
 		return nil, err
 	}
 
-	proxy, err := proxy.New(ctx, log.Named("proxy"), config, events, store)
+	proxy, err := proxy.New(ctx, log.Named("proxy"), config)
 	if err != nil {
 		return nil, err
 	}

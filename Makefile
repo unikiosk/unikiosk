@@ -48,3 +48,9 @@ test:
 
 clean:
 	rm -rf data
+
+install-mkcert:
+	go install ./vendor/filippo.io/mkcert
+
+generate-mkcert-certs:
+	mkcert localhost 127.0.0.1 ::1

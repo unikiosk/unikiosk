@@ -3,9 +3,12 @@ module github.com/unikiosk/unikiosk
 go 1.17
 
 require (
+	filippo.io/mkcert v0.0.0-00010101000000-000000000000
+	github.com/elazarl/goproxy v0.0.0-20211114080932-d06c3be7c11b
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
+	github.com/inconshreveable/go-vhost v0.0.0-20160627193104-06d84117953b
 	github.com/joho/godotenv v1.4.0
 	github.com/kbinani/screenshot v0.0.0-20210720154843-7d3a670d8329
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -19,7 +22,7 @@ require (
 	golang.org/x/tools v0.1.5
 	google.golang.org/grpc v1.42.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
-	honnef.co/go/tools v0.0.1-2020.1.4
+	honnef.co/go/tools v0.0.1-2020.1.6
 )
 
 require (
@@ -35,14 +38,19 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/mod v0.4.2 // indirect
-	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
+	golang.org/x/mod v0.5.1 // indirect
+	golang.org/x/net v0.0.0-20211020060615-d418f374d309 // indirect
 	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
-	golang.org/x/text v0.3.5 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect
+	software.sslmate.com/src/go-pkcs12 v0.0.0-20180114231543-2291e8f0f237 // indirect
 )
 
-replace github.com/webview/webview => github.com/unikiosk/webview v0.0.0-20211117135816-7d7c71ab053f
+replace (
+	filippo.io/mkcert => github.com/FiloSottile/mkcert v0.0.0-20210213023452-0a3190b1659e
+	github.com/webview/webview => github.com/unikiosk/webview v0.0.0-20211118091437-0165181fe18c
+)

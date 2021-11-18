@@ -1,26 +1,22 @@
 package proxy
 
 import (
+	"bufio"
 	"context"
-	"crypto/tls"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
-	"sync"
-	"sync/atomic"
+	"regexp"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
+	"github.com/elazarl/goproxy"
+	"github.com/inconshreveable/go-vhost"
 	"go.uber.org/zap"
 
-	"github.com/unikiosk/unikiosk/pkg/api"
 	"github.com/unikiosk/unikiosk/pkg/config"
-	"github.com/unikiosk/unikiosk/pkg/eventer"
-	"github.com/unikiosk/unikiosk/pkg/store"
 	"github.com/unikiosk/unikiosk/pkg/util/recover"
 )
 
@@ -32,210 +28,143 @@ type Proxy interface {
 
 type proxy struct {
 	config *config.Config
-	server *http.Server
-
-	store  store.Store
-	events eventer.Eventer
-
-	ready atomic.Value
-
-	targetURLMu *sync.RWMutex
-	targetURL   *url.URL
-
-	log *zap.Logger
+	proxy  *goproxy.ProxyHttpServer
+	log    *zap.Logger
 }
 
-func New(ctx context.Context, log *zap.Logger, config *config.Config, events eventer.Eventer, store store.Store) (*proxy, error) {
-	// check if we have state, if not - default
-	var u string
-	state, err := store.Get(proxyStateKey)
-	if err != nil || state == nil {
-		log.Info("no state found - start fresh")
-		u = config.DefaultWebServerURL
-	} else {
-		u = state.Content
-	}
-
-	defaultURL, err := url.Parse(u)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse upstream address: %w", err)
-	}
+func New(ctx context.Context, log *zap.Logger, config *config.Config) (*proxy, error) {
 
 	p := proxy{
-		log:       log,
-		config:    config,
-		events:    events,
-		targetURL: defaultURL,
-		store:     store,
-
-		ready:       atomic.Value{},
-		targetURLMu: &sync.RWMutex{},
+		log:    log,
+		config: config,
 	}
 
-	h, err := p.getProxyHandler(defaultURL)
-	if err != nil {
-		return nil, err
-	}
-
-	p.server = &http.Server{
-		Addr:    p.config.ProxyServerAddr,
-		Handler: h,
-	}
-
-	go func() {
-		defer recover.Panic(p.log)
-
-		err := p.runSync(ctx)
-		if err != nil {
-			p.log.Debug("failed proxy reload", zap.Error(err))
-		}
-	}()
+	proxy := goproxy.NewProxyHttpServer()
+	proxy.Verbose = true
+	p.proxy = proxy
 
 	return &p, nil
 }
 
-func (p *proxy) getProxyHandler(u *url.URL) (http.Handler, error) {
-	rp := &httputil.ReverseProxy{
-		Transport: &http.Transport{DialTLS: dialTLS},
-	}
-
-	if u.Scheme == "https" {
-		// Set a custom DialTLS to access the TLS connection state
-		rp.Transport = &http.Transport{DialTLS: dialTLS}
-	}
-
-	rp.Director = p.Director
-
-	r := mux.NewRouter()
-	r.Use(handlers.CompressHandler)
-
-	r.PathPrefix("/").Handler(rp)
-	return r, nil
-}
-
-func (p *proxy) Director(req *http.Request) {
-	spew.Dump(req.Host)
-	for k, v := range p.config.ProxyHeaders {
-		req.Header.Set(k, v)
-	}
-
-	p.targetURLMu.RLock()
-	defer p.targetURLMu.RUnlock()
-
-	req.URL.Scheme = p.targetURL.Scheme
-	req.URL.Host = p.targetURL.Host
-	req.Host = p.targetURL.Host
-
-	if _, ok := req.Header["User-Agent"]; !ok {
-		// explicitly disable User-Agent so it's not set to default value
-		req.Header.Set("User-Agent", "")
+// TODO: Drop this
+func orPanic(err error) {
+	if err != nil {
+		panic(err)
 	}
 }
 
-func dialTLS(network, addr string) (net.Conn, error) {
-	conn, err := net.Dial(network, addr)
-	if err != nil {
-		return nil, err
+// copied/converted from https.go
+func connectDial(ctx context.Context, proxy *goproxy.ProxyHttpServer, network, addr string) (c net.Conn, err error) {
+	if proxy.ConnectDial == nil {
+		if proxy.Tr.DialContext != nil {
+			return proxy.Tr.DialContext(ctx, network, addr)
+		}
+		return net.Dial(network, addr)
 	}
-
-	host, _, err := net.SplitHostPort(addr)
-	if err != nil {
-		return nil, err
-	}
-	cfg := &tls.Config{ServerName: host}
-
-	tlsConn := tls.Client(conn, cfg)
-	if err := tlsConn.Handshake(); err != nil {
-		conn.Close()
-		return nil, err
-	}
-
-	cs := tlsConn.ConnectionState()
-	cert := cs.PeerCertificates[0]
-
-	_ = cert.VerifyHostname(host)
-
-	return tlsConn, nil
+	return proxy.ConnectDial(network, addr)
 }
 
 func (p *proxy) Run(ctx context.Context) error {
-	p.ready.Store(true)
-	p.log.Info("Proxy running",
-		zap.String("listening", p.config.ProxyServerAddr),
-		zap.String("destination", p.targetURL.String()),
-	)
+	p.log.Debug("Proxy server starting up", zap.String("http", p.config.ProxyHTTPServerAddr), zap.String("https", p.config.ProxyHTTPSServerAddr))
 
-	for {
-		// lock while we run
-		p.ready.Store(true)
-
-		err := p.server.ListenAndServe()
-		if err != nil {
-			p.log.Debug("proxy failed. Restarting", zap.Error(err))
-			time.Sleep(time.Second)
+	p.proxy.NonproxyHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.Host == "" {
+			fmt.Fprintln(w, "Cannot handle requests without Host header, e.g., HTTP 1.0")
+			return
 		}
-		// once failed release lock sp we can hot swap the server
-		p.log.Debug("proxy restarting", zap.Error(err))
+		req.URL.Scheme = "http"
+		req.URL.Host = req.Host
+		p.proxy.ServeHTTP(w, req)
+	})
+
+	p.proxy.OnRequest().DoFunc(
+		func(r *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
+			p.log.Info("set headers")
+			for k, v := range p.config.ProxyHeaders {
+				r.Header.Set(k, v)
+			}
+
+			return r, nil
+		})
+
+	p.proxy.OnRequest(goproxy.ReqHostMatches(regexp.MustCompile("^.*$"))).
+		HandleConnect(goproxy.AlwaysMitm)
+
+	p.proxy.OnRequest(goproxy.ReqHostMatches(regexp.MustCompile("^.*:80$"))).
+		HijackConnect(func(req *http.Request, client net.Conn, ctx *goproxy.ProxyCtx) {
+			defer func() {
+				recover.Panic(p.log)
+				client.Close()
+			}()
+
+			clientBuf := bufio.NewReadWriter(bufio.NewReader(client), bufio.NewWriter(client))
+			remote, err := connectDial(ctx.Req.Context(), p.proxy, "tcp", req.URL.Host)
+			orPanic(err)
+			remoteBuf := bufio.NewReadWriter(bufio.NewReader(remote), bufio.NewWriter(remote))
+			for {
+				req, err := http.ReadRequest(clientBuf.Reader)
+				orPanic(err)
+				orPanic(req.Write(remoteBuf))
+				orPanic(remoteBuf.Flush())
+				resp, err := http.ReadResponse(remoteBuf.Reader, req)
+				orPanic(err)
+				orPanic(resp.Write(clientBuf.Writer))
+				orPanic(clientBuf.Flush())
+			}
+		})
+
+	go func() {
+		for {
+			err := http.ListenAndServe(p.config.ProxyHTTPServerAddr, p.proxy)
+			if err != nil {
+				p.log.Debug("http proxy failed. Restarting", zap.Error(err))
+				time.Sleep(time.Second)
+			}
+			// once failed release lock sp we can hot swap the server
+			p.log.Debug("proxy restarting", zap.Error(err))
+		}
+	}()
+
+	// listen to the TLS ClientHello but make it a CONNECT request instead
+	ln, err := net.Listen("tcp", p.config.ProxyHTTPSServerAddr)
+	if err != nil {
+		log.Fatalf("Error listening for https connections - %v", err)
 	}
+	for {
+		c, err := ln.Accept()
+		if err != nil {
+			log.Printf("Error accepting new connection - %v", err)
+			continue
+		}
+		go func(c net.Conn) {
+			tlsConn, err := vhost.TLS(c)
+			if err != nil {
+				log.Printf("Error accepting new connection - %v", err)
+			}
+			spew.Dump(tlsConn)
+			if tlsConn.Host() == "" {
+				log.Printf("Cannot support non-SNI enabled clients")
+				return
+			}
+			connectReq := &http.Request{
+				Method: "CONNECT",
+				URL: &url.URL{
+					Opaque: tlsConn.Host(),
+					Host:   net.JoinHostPort(tlsConn.Host(), "443"),
+				},
+				Host:       tlsConn.Host(),
+				Header:     make(http.Header),
+				RemoteAddr: c.RemoteAddr().String(),
+			}
+			resp := dumbResponseWriter{tlsConn}
+			p.proxy.ServeHTTP(resp, connectReq)
+		}(c)
+	}
+
 }
 
 func (p *proxy) Stop(ctx context.Context) error {
 	p.log.Info("stopping proxy")
-	p.ready.Store(false)
-	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	return p.server.Shutdown(ctxTimeout)
-}
-
-func (p *proxy) runSync(ctx context.Context) error {
-	listener := p.events.Subscribe(ctx)
-
-	for event := range listener {
-		p.log.Debug("reload proxy")
-		if event.Payload.Type != api.EventTypeProxyUpdate {
-			continue
-		}
-
-		e := event.Payload
-		callback := event.Callback
-
-		// create new server object and override existing one
-		u, err := url.Parse(e.Request.Content)
-		if err != nil {
-			p.log.Error("failed to parse target URL",
-				zap.String("url", e.Request.Content),
-				zap.Error(err),
-			)
-			continue
-		}
-		p.targetURLMu.Lock()
-		p.targetURL = u
-		p.targetURLMu.Unlock()
-
-		err = p.store.Persist(proxyStateKey, api.KioskState{
-			Content: u.String(),
-		})
-		if err != nil {
-			p.log.Warn("failed to persist proxy state, will fails to recover")
-		}
-
-		// override webview back to proxy as we might be in file serve mode
-		_, err = p.events.Emit(&eventer.EventWrapper{
-			Payload: api.Event{
-				Type: api.EventTypeWebViewUpdate,
-				Request: api.KioskRequest{
-					Content: p.targetURL.String(),
-				},
-			},
-			// pipe in callback
-			Callback: callback,
-		})
-		if err != nil {
-			p.log.Error("failed to emit webview update event",
-				zap.Error(err),
-			)
-		}
-	}
+	// TODO: implement
 	return nil
-
 }

@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"image/png"
+	"time"
 
 	"github.com/kbinani/screenshot"
 	"github.com/webview/webview"
@@ -118,8 +119,10 @@ func (k *kiosk) Screenshot() ([]byte, error) {
 
 func (k *kiosk) startOrRestore() error {
 	w := webview.New(true)
-	k.log.Info("set proxy", zap.String("proxy", k.config.DefaultProxyURL))
-	w.Proxy(k.config.DefaultProxyURL, []string{})
+	k.log.Info("set proxy", zap.String("proxy", k.config.DefaultHTTPProxyURL))
+	w.Proxy(k.config.DefaultHTTPProxyURL, nil)
+	w.Proxy(k.config.DefaultHTTPSProxyURL, nil)
+
 	k.w = w
 
 	state := k.getCurrentState()
@@ -150,24 +153,24 @@ func (k *kiosk) Run(ctx context.Context) error {
 
 	// HACK: Webview is not loading page on start due to some race condition. Still need to get to the bottom of it
 	// We emit event to re-load after 2s of the startup hope we will succeed :/
-	//go func() {
-	//	defer recover.Panic(k.log)
-	//
-	//	time.Sleep(time.Second * 2)
-	//	state := k.getCurrentState()
-	//	k.log.Info("emit", zap.String("content", state.Content))
-	//	_, _ = k.events.Emit(&eventer.EventWrapper{
-	//		Payload: api.Event{
-	//			Type: api.EventTypeWebViewUpdate,
-	//			Request: api.KioskRequest{
-	//				Content: state.Content,
-	//				Title:   state.Title,
-	//				SizeW:   state.SizeW,
-	//				SizeH:   state.SizeH,
-	//			},
-	//		},
-	//	})
-	//}()
+	go func() {
+		defer recover.Panic(k.log)
+
+		time.Sleep(time.Second * 2)
+		state := k.getCurrentState()
+		k.log.Info("emit", zap.String("content", state.Content))
+		_, _ = k.events.Emit(&eventer.EventWrapper{
+			Payload: api.Event{
+				Type: api.EventTypeWebViewUpdate,
+				Request: api.KioskRequest{
+					Content: state.Content,
+					Title:   state.Title,
+					SizeW:   state.SizeW,
+					SizeH:   state.SizeH,
+				},
+			},
+		})
+	}()
 
 	for {
 		k.startOrRestore()

@@ -37,7 +37,7 @@ func (s *KioskServiceGrpcImpl) StartOrUpdate(ctx context.Context, in *models.Kio
 	// update webview only
 	callback, err := s.events.Emit(&eventer.EventWrapper{
 		Payload: api.Event{
-			Type:    api.EventTypeProxyUpdate,
+			Type:    api.EventTypeWebViewUpdate,
 			Request: api.ProtoKioskRequestToModels(in),
 		},
 	})

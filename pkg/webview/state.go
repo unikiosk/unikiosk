@@ -51,7 +51,7 @@ func (k *kiosk) getCurrentState() api.KioskState {
 	if err != nil || state == nil {
 		k.log.Info("no state found - start fresh")
 		s := api.KioskState{
-			Content: k.config.DefaultProxyURL,
+			Content: k.config.DefaultWebServerURL,
 			SizeW:   int64(C.display_width()),
 			SizeH:   int64(C.display_height()),
 			Title:   "UniKiosk",

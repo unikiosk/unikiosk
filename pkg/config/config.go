@@ -12,17 +12,26 @@ type Config struct {
 	// Address sections
 	// GRPCServerAddr is GRPC API address bind used by CLI
 	GRPCServerAddr string `yaml:"controllerGRPCServerAddr,omitempty" envconfig:"GRPC_SERVER_ADDR"  default:":7000"`
+
 	// ProxyServerAddr defines address to which Proxy should bind. It handles all requests and sends them to either our webserver (8081) or to user provided URL.
 	// Proxy purpose is to inject headers, like authentication.
 	// Once proxy destination changes, webview will need to be triggered reload
-	ProxyServerAddr string `yaml:"proxyServerAddr,omitempty" envconfig:"PROXY_SERVER_ADDR"  default:""` // Default -random
+	ProxyHTTPServerAddr  string `yaml:"proxyHTTPServerAddr,omitempty" envconfig:"PROXY_HTTP_SERVER_ADDR"  default:""`   // Default -random
+	ProxyHTTPSServerAddr string `yaml:"proxyHTTPSServerAddr,omitempty" envconfig:"PROXY_HTTPS_SERVER_ADDR"  default:""` // Default -random
+
 	// WebServerAddr - address of where internal web server binds
 	WebServerAddr string `yaml:"webServerAddr,omitempty" envconfig:"WEB_SERVER_ADDR"  default:":8081"` // web server bind port
 
 	// default routing section
-	// DefaultProxyURL - is proxy URL. It used in webview to route requests via proxy
+	// DefaultHTTPProxyURL - is proxy URL. It used in webview to route requests via proxy
 	// Populated automatically
-	DefaultProxyURL string
+	DefaultHTTPProxyURL string
+
+	// default routing section
+	// DefaultHTTPProxyURL - is proxy URL. It used in webview to route requests via proxy
+	// Populated automatically
+	DefaultHTTPSProxyURL string
+
 	// DefaultWebServerURL is default webserver url. Used to serve default content
 	// Populated automatically
 	DefaultWebServerURL string
@@ -49,19 +58,27 @@ func Load() (*Config, error) {
 		return c, err
 	}
 
-	if c.ProxyServerAddr == "" {
+	if c.ProxyHTTPServerAddr == "" {
 		port, err := freeport.GetFreePort()
 		if err != nil {
 			return nil, fmt.Errorf("failed to allocate free port: %w", err)
 		}
-		c.ProxyServerAddr = fmt.Sprintf(":%d", port)
+		c.ProxyHTTPServerAddr = fmt.Sprintf(":%d", port)
+	}
+	if c.ProxyHTTPSServerAddr == "" {
+		port, err := freeport.GetFreePort()
+		if err != nil {
+			return nil, fmt.Errorf("failed to allocate free port: %w", err)
+		}
+		c.ProxyHTTPSServerAddr = fmt.Sprintf(":%d", port)
 	}
 
 	// TODO: add check if user provides full bind URL for proxy server address
-	c.DefaultProxyURL = "http://127.0.0.1" + c.ProxyServerAddr
+	c.DefaultHTTPProxyURL = "http://127.0.0.1" + c.ProxyHTTPServerAddr
+	c.DefaultHTTPSProxyURL = "https://127.0.0.1" + c.ProxyHTTPSServerAddr
 
 	// TODO: add check if user provided full bind URL for webserver
-	c.DefaultWebServerURL = "http://127.0.0.1" + c.WebServerAddr
+	c.DefaultWebServerURL = "http://0.0.0.0" + c.WebServerAddr
 
 	return c, err
 }
