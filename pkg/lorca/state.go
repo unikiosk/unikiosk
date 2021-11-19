@@ -1,8 +1,9 @@
 package lorca
 
 import (
-	"github.com/unikiosk/unikiosk/pkg/api"
 	"go.uber.org/zap"
+
+	"github.com/unikiosk/unikiosk/pkg/api"
 )
 
 /*

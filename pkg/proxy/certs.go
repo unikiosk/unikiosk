@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/elazarl/goproxy"
+
 	"github.com/unikiosk/unikiosk/pkg/util/file"
 )
 

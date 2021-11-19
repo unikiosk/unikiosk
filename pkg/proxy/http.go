@@ -10,8 +10,9 @@ import (
 	"time"
 
 	"github.com/elazarl/goproxy"
-	"github.com/unikiosk/unikiosk/pkg/util/recover"
 	"go.uber.org/zap"
+
+	"github.com/unikiosk/unikiosk/pkg/util/recover"
 )
 
 func (p *proxy) runHTTP(ctx context.Context) error {
