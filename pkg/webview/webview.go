@@ -120,7 +120,7 @@ func (k *kiosk) Screenshot() ([]byte, error) {
 func (k *kiosk) startOrRestore() error {
 	w := webview.New(true)
 	k.log.Info("set proxy", zap.String("http", k.config.DefaultHTTPProxyURL), zap.String("http", k.config.DefaultHTTPSProxyURL))
-	//w.Proxy(k.config.DefaultHTTPProxyURL, nil)
+	w.Proxy(k.config.DefaultHTTPProxyURL, nil)
 	w.Proxy(k.config.DefaultHTTPSProxyURL, nil)
 
 	k.w = w

@@ -11,7 +11,7 @@ import (
 type Config struct {
 	// Address sections
 	// GRPCServerAddr is GRPC API address bind used by CLI
-	GRPCServerAddr string `yaml:"controllerGRPCServerAddr,omitempty" envconfig:"GRPC_SERVER_ADDR"  default:":7001"`
+	GRPCServerAddr string `yaml:"controllerGRPCServerAddr,omitempty" envconfig:"GRPC_SERVER_ADDR"  default:":7000"`
 
 	// ProxyServerAddr defines address to which Proxy should bind. It handles all requests and sends them to either our webserver (8081) or to user provided URL.
 	// Proxy purpose is to inject headers, like authentication.

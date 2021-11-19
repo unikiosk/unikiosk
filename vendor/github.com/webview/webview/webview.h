@@ -522,8 +522,8 @@ public:
 
   void network_proxy_settings_new(const std::string default_proxy_uri,
                                   const char *const *ignoreHosts) {
-      webkit_website_data_manager_set_network_proxy_settings(
-        webkit_website_data_manager_new_ephemeral(), WEBKIT_NETWORK_PROXY_MODE_CUSTOM,
+      webkit_web_context_set_network_proxy_settings(
+        webkit_web_context_get_default(), WEBKIT_NETWORK_PROXY_MODE_CUSTOM,
         webkit_network_proxy_settings_new(default_proxy_uri.c_str(),
                                           ignoreHosts));
   }
@@ -1385,6 +1385,7 @@ WEBVIEW_API void webview_return(webview_t w, const char *seq, int status,
 
 WEBVIEW_API void webview_proxy_new(webview_t w, const char *default_proxy_uri,
                                    const char *const *ignoreHosts) {
+  printf(default_proxy_uri);
   static_cast<webview::webview *>(w)->network_proxy_settings_new(
       default_proxy_uri, ignoreHosts);
 }
