@@ -74,9 +74,9 @@ github.com/spf13/pflag
 ## explicit; go 1.13
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
-# github.com/webview/webview v0.0.0-20210330151455-f540d88dde4e => github.com/unikiosk/webview v0.0.0-20211119125735-5f60f80e0e3b
+# github.com/zserge/lorca v0.1.10
 ## explicit; go 1.13
-github.com/webview/webview
+github.com/zserge/lorca
 # go.uber.org/atomic v1.7.0
 ## explicit; go 1.13
 go.uber.org/atomic
@@ -104,6 +104,7 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
+golang.org/x/net/websocket
 # golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 ## explicit
 golang.org/x/sync/errgroup

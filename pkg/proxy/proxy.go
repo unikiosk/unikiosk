@@ -8,6 +8,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/unikiosk/unikiosk/pkg/config"
+	"github.com/unikiosk/unikiosk/pkg/util/logger"
 )
 
 type Proxy interface {
@@ -31,10 +32,12 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config) (*proxy, e
 
 	proxyHTTP := goproxy.NewProxyHttpServer()
 	proxyHTTP.Verbose = true
+	proxyHTTP.Logger = logger.NewProxyLogger(log)
 	p.proxyHTTP = proxyHTTP
 
 	proxyHTTPS := goproxy.NewProxyHttpServer()
 	proxyHTTPS.Verbose = true
+	proxyHTTPS.Logger = logger.NewProxyLogger(log)
 	p.proxyHTTPS = proxyHTTPS
 
 	err := p.setCertificate()
@@ -50,9 +53,9 @@ func (p *proxy) Run(ctx context.Context) error {
 
 	g, _ := errgroup.WithContext(ctx)
 
-	g.Go(func() error {
-		return p.runHTTP(ctx)
-	})
+	//g.Go(func() error {
+	//	return p.runHTTP(ctx)
+	//})
 
 	g.Go(func() error {
 		return p.runHTTPS(ctx)

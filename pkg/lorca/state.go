@@ -1,4 +1,4 @@
-package webview
+package lorca
 
 import (
 	"github.com/unikiosk/unikiosk/pkg/api"
@@ -7,7 +7,7 @@ import (
 
 /*
 #cgo darwin LDFLAGS: -framework CoreGraphics -L/usr/include/X11 -lextensions
-#cgo linux pkg-config: x11 xkbcommon x11-xcb xcursor xfixes
+#cgo linux pkg-config: x11 xkbcommon x11-xcb
 #if defined(__APPLE__)
 #include <CoreGraphics/CGDisplayConfiguration.h>
 int display_width() {
@@ -47,7 +47,7 @@ int display_height() {
 import "C"
 
 func (k *kiosk) getCurrentState() api.KioskState {
-	state, err := k.store.Get(webViewStateKey)
+	state, err := k.store.Get(stateKey)
 	if err != nil || state == nil {
 		k.log.Info("no state found - start fresh")
 		s := api.KioskState{
@@ -56,7 +56,7 @@ func (k *kiosk) getCurrentState() api.KioskState {
 			SizeH:   int64(C.display_height()),
 			Title:   "UniKiosk",
 		}
-		err = k.store.Persist(webViewStateKey, s)
+		err = k.store.Persist(stateKey, s)
 		if err != nil {
 			k.log.Warn("failed to persist store, will not recover after restart", zap.Error(err))
 		}

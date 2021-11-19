@@ -1,4 +1,4 @@
-package webview
+package lorca
 
 import (
 	"bytes"
@@ -9,8 +9,7 @@ import (
 	"time"
 
 	"github.com/kbinani/screenshot"
-	"github.com/webview/webview"
-	gowebview "github.com/webview/webview"
+	"github.com/zserge/lorca"
 	"go.uber.org/zap"
 
 	"github.com/unikiosk/unikiosk/pkg/api"
@@ -21,14 +20,14 @@ import (
 	"github.com/unikiosk/unikiosk/pkg/util/shell"
 )
 
-var webViewStateKey = "webview"
+var stateKey = "lorca"
 
 type kiosk struct {
 	log    *zap.Logger
 	config *config.Config
 
 	events eventer.Eventer
-	w      gowebview.WebView
+	l      lorca.UI
 	store  store.Store
 }
 
@@ -37,7 +36,7 @@ type Kiosk interface {
 	PowerOff() error
 	PowerOn() error
 	Screenshot() ([]byte, error)
-	Close()
+	Close() error
 }
 
 func New(log *zap.Logger, config *config.Config, events eventer.Eventer, store store.Store) (*kiosk, error) {
@@ -54,8 +53,8 @@ func New(log *zap.Logger, config *config.Config, events eventer.Eventer, store s
 	return k, nil
 }
 
-func (k *kiosk) Close() {
-	k.w.Destroy()
+func (k *kiosk) Close() error {
+	return k.l.Close()
 }
 
 // TODO: Power off/on should be better done via CGO
@@ -118,34 +117,26 @@ func (k *kiosk) Screenshot() ([]byte, error) {
 }
 
 func (k *kiosk) startOrRestore() error {
-	w := webview.New(true)
-	k.log.Info("set proxy", zap.String("http", k.config.DefaultHTTPProxyURL), zap.String("http", k.config.DefaultHTTPSProxyURL))
-	w.Proxy(k.config.DefaultHTTPProxyURL, nil)
-	w.Proxy(k.config.DefaultHTTPSProxyURL, nil)
-
-	k.w = w
+	k.log.Info("set proxy", zap.String("http", k.config.DefaultHTTPProxyURL), zap.String("https", k.config.DefaultHTTPSProxyURL))
 
 	state := k.getCurrentState()
 
-	k.w.SetSize(int(state.SizeW), int(state.SizeH), webview.HintNone)
+	fullScreen := "--start-fullscreen"
+	proxyHTTPS := fmt.Sprintf("--proxy-server=%s", k.config.DefaultHTTPSProxyURL)
 
-	k.w.Dispatch(func() {
-		contentLog := state.Content
-		if len(state.Content) > 50 {
-			contentLog = state.Content[:50]
-		}
+	ui, err := lorca.New("https://grafana.webrelay.io/playlists/play/1?kiosk", "", int(state.SizeW), int(state.SizeH), fullScreen, proxyHTTPS)
+	if err != nil {
+		return err
+	}
+	k.l = ui
 
-		k.log.Info("open", zap.String("content", contentLog))
-		w.Navigate(state.Content)
-	})
-
-	k.w.Run()
+	<-k.l.Done()
 
 	return nil
 }
 
 func (k *kiosk) Run(ctx context.Context) error {
-	k.log.Info("start webview manager")
+	k.log.Info("start lorca manager")
 
 	// because webview must run in main thread, we run dispatcher as separete thread.
 	// dispatcher responsible for acting to grpc calls and updating the ser
@@ -173,6 +164,7 @@ func (k *kiosk) Run(ctx context.Context) error {
 	}()
 
 	for {
+		// TODO: Add context
 		k.startOrRestore()
 	}
 }
@@ -265,29 +257,11 @@ func (k *kiosk) updateState(ctx context.Context, in api.KioskRequest, urlHash st
 
 	// Dispatch is async, so we need to persist inside of it :/ this is not ideal as context are mixed
 	if in.Content != "" && urlHash != state.ContentHash {
-		k.log.Info("refresh webview", zap.String("incoming", in.Content), zap.String("current", state.Content))
-		k.w.Navigate(in.Content)
+
+		k.l.Load(in.Content)
 
 		state.Content = in.Content
 		state.ContentHash = urlHash
-	}
-
-	if in.Title != "" && state.Title != in.Title {
-		k.w.SetTitle(in.Title)
-		state.Title = in.Title
-	}
-
-	var changed bool
-	if in.SizeW != 0 && state.SizeW != in.SizeW {
-		state.SizeW = in.SizeW
-		changed = true
-	}
-	if in.SizeH != 0 && state.SizeH != in.SizeH {
-		state.SizeH = in.SizeH
-		changed = true
-	}
-	if changed {
-		k.w.SetSize(int(state.SizeW), int(state.SizeH), webview.HintNone)
 	}
 
 	if in.Action.String() == api.ScreenActionPowerOff.String() {
@@ -297,7 +271,7 @@ func (k *kiosk) updateState(ctx context.Context, in api.KioskRequest, urlHash st
 		state.ScreenPowerState = api.ScreenPowerStateOn
 	}
 
-	err := k.store.Persist(webViewStateKey, state)
+	err := k.store.Persist(stateKey, state)
 	if err != nil {
 		k.log.Warn("failed to persist store, will not recover after restart", zap.Error(err))
 	}
@@ -307,7 +281,7 @@ func (k *kiosk) updateLastScreenshot(ctx context.Context, screen []byte) error {
 	state := k.getCurrentState()
 	state.Screenshot = screen
 
-	err := k.store.Persist(webViewStateKey, state)
+	err := k.store.Persist(stateKey, state)
 	if err != nil {
 		k.log.Warn("failed to persist store, will not recover after restart", zap.Error(err))
 	}
