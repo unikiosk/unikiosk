@@ -11,6 +11,9 @@ ARG TARGETARCH
 # force GTK and pango https://github.com/gotk3/gotk3/issues/693
 RUN CGO_ENABLED=1 GOARCH=$TARGETARCH go build -tags pango_1_42,gtk_3_22 -o /app/screen ./cmd/screen
 
+# generate and install root ca for MITM proxy
+RUN go install ./vendor/filippo.io/mkcert
+
 FROM ubuntu
 
 ENV DEBIAN_FRONTEND noninteractive

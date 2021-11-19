@@ -522,8 +522,8 @@ public:
 
   void network_proxy_settings_new(const std::string default_proxy_uri,
                                   const char *const *ignoreHosts) {
-    webkit_web_context_set_network_proxy_settings(
-        webkit_web_context_get_default(), WEBKIT_NETWORK_PROXY_MODE_CUSTOM,
+      webkit_website_data_manager_set_network_proxy_settings(
+        webkit_website_data_manager_new_ephemeral(), WEBKIT_NETWORK_PROXY_MODE_CUSTOM,
         webkit_network_proxy_settings_new(default_proxy_uri.c_str(),
                                           ignoreHosts));
   }

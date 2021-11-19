@@ -52,5 +52,11 @@ clean:
 install-mkcert:
 	go install ./vendor/filippo.io/mkcert
 
-generate-mkcert-certs:
-	mkcert localhost 127.0.0.1 ::1
+# generate-mkcerts will generate certificate and copy for dev to local dir
+generate-mkcert:
+	mkcert -install
+	cp $(shell mkcert -CAROOT)/* ./
+
+configure-ca-trust-fedora:
+	sudo cp rootCA.pem /etc/pki/ca-trust/source/anchors/unikiosk.pem
+	sudo update-ca-trust
