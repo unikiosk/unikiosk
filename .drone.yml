@@ -3,8 +3,9 @@ type: docker
 name: default
 
 trigger:
-  branch:
-  - main
+  ref:
+  - refs/heads/main
+  - refs/heads/**
 
 volumes:
   - name: certs
