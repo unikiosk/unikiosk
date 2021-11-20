@@ -165,7 +165,12 @@ func (k *kiosk) Run(ctx context.Context) error {
 
 	for {
 		// TODO: Add context
-		k.startOrRestore()
+		err := k.startOrRestore()
+		if err != nil {
+			k.log.Error("startOrRestore failed", zap.Error(err))
+			time.Sleep(time.Second * 1)
+		}
+
 	}
 }
 
