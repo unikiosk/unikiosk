@@ -56,7 +56,3 @@ install-mkcert:
 generate-mkcert:
 	mkcert -install
 	cp $(shell mkcert -CAROOT)/* ./
-
-configure-ca-trust-fedora:
-	sudo cp rootCA.pem /etc/pki/ca-trust/source/anchors/unikiosk.pem
-	sudo update-ca-trust

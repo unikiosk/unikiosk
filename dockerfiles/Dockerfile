@@ -45,24 +45,18 @@ RUN apt-get update && apt-get install -y \
 RUN adduser --system --uid 5000 --disabled-password --shell /bin/bash  -q chromium
 RUN addgroup chromium tty
 
-# install mkcert. use arm64
-RUN curl -s https://api.github.com/repos/FiloSottile/mkcert/releases/latest| grep browser_download_url  | grep linux-arm64 | cut -d '"' -f 4 | wget -O mkcert -i -
-RUN chmod a+x mkcert 
-
-COPY --from=go-build-env /app/screen /bin/
-
-# Add and update CA trust with custom cert for MITM proxy
-COPY --from=go-build-env /app/mkcert /bin/
-RUN chmod a+x /bin/mkcert 
-RUN mkcert -install
+RUN mkdir -p /root/.local/share/mkcert/
+COPY --from=go-build-env /app/rootCA-key.pem /root/.local/share/mkcert/
+COPY --from=go-build-env /app/rootCA.pem /root/.local/share/mkcert/
 RUN cp /root/.local/share/mkcert/rootCA.pem /usr/local/share/ca-certificates/rootCA.crt
-
 RUN update-ca-certificates
 
 ENV PROXY_HTTPS_CERT=/root/.local/share/mkcert/rootCA.pem
 ENV PROXY_HTTPS_CERT_KEY=/root/.local/share/mkcert/rootCA-key.pem
 
 # Add unikiosk scripts
+COPY --from=go-build-env /app/screen /bin/
+
 ADD scripts/start /root/start
 ADD scripts/run /bin/run
 ADD ui /www
