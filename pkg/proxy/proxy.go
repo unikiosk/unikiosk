@@ -53,9 +53,9 @@ func (p *proxy) Run(ctx context.Context) error {
 
 	g, _ := errgroup.WithContext(ctx)
 
-	//g.Go(func() error {
-	//	return p.runHTTP(ctx)
-	//})
+	g.Go(func() error {
+		return p.runHTTP(ctx)
+	})
 
 	g.Go(func() error {
 		return p.runHTTPS(ctx)

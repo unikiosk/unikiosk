@@ -1,19 +1,10 @@
 FROM golang:buster AS go-build-env
 WORKDIR /app
 
-RUN apt-get update
-ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get install -y build-essential ca-certificates libwebkit2gtk-4.0-dev libglib2.0-dev
-
 COPY . .
 
 ARG TARGETARCH
 RUN GOARCH=$TARGETARCH go build -o /app/screen ./cmd/screen
-
-# generate and install root ca for MITM proxy
-RUN go install ./vendor/filippo.io/mkcert
-RUN mkcert -install
-RUN mkcert -CAROOT 
 
 FROM debian:bullseye-slim
 
@@ -44,6 +35,8 @@ RUN apt-get update && apt-get install -y \
       xauth \ 
       xinit \ 
       curl \
+      wget \
+      libnss3-tools \
       --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /etc/chromium.d/ \
@@ -52,15 +45,22 @@ RUN apt-get update && apt-get install -y \
 RUN adduser --system --uid 5000 --disabled-password --shell /bin/bash  -q chromium
 RUN addgroup chromium tty
 
+# install mkcert
+RUN curl -s https://api.github.com/repos/FiloSottile/mkcert/releases/latest| grep browser_download_url  | grep linux-$TARGETARCH | cut -d '"' -f 4 | wget -O mkcert -i -
+RUN chmod a+x mkcert 
+
 COPY --from=go-build-env /app/screen /bin/
 
 # Add and update CA trust with custom cert for MITM proxy
-COPY --from=go-build-env /root/.local/share/mkcert/ /root/.local/share/mkcert/
-RUN cp root/.local/share/mkcert/* /usr/local/share/ca-certificates
+COPY --from=go-build-env /app/mkcert /bin/
+RUN chmod a+x /bin/mkcert 
+RUN mkcert -install
+RUN cp /root/.local/share/mkcert/rootCA.pem /usr/local/share/ca-certificates/rootCA.crt
+
 RUN update-ca-certificates
 
-ENV PROXY_HTTPS_CERT=/usr/local/share/ca-certificates/rootCA.pem
-ENV PROXY_HTTPS_CERT_KEY=/usr/local/share/ca-certificates/rootCA-key.pem
+ENV PROXY_HTTPS_CERT=/root/.local/share/mkcert/rootCA.pem
+ENV PROXY_HTTPS_CERT_KEY=/root/.local/share/mkcert/rootCA-key.pem
 
 # Add unikiosk scripts
 ADD scripts/start /root/start

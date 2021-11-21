@@ -59,9 +59,11 @@ func newChromeWithArgs(chromeBinary string, args ...string) (*chrome, error) {
 	c.cmd = exec.Command(chromeBinary, args...)
 	pipe, err := c.cmd.StderrPipe()
 	if err != nil {
+		fmt.Printf("exec.v failed %v", err)
 		return nil, err
 	}
 	if err := c.cmd.Start(); err != nil {
+		fmt.Printf("exec.Start failed %v", err)
 		return nil, err
 	}
 
@@ -70,6 +72,7 @@ func newChromeWithArgs(chromeBinary string, args ...string) (*chrome, error) {
 	m, err := readUntilMatch(pipe, re)
 	if err != nil {
 		c.kill()
+		fmt.Printf("readUntilMatch failed %v", err)
 		return nil, err
 	}
 	wsURL := m[1]
@@ -78,6 +81,7 @@ func newChromeWithArgs(chromeBinary string, args ...string) (*chrome, error) {
 	c.ws, err = websocket.Dial(wsURL, "", "http://127.0.0.1")
 	if err != nil {
 		c.kill()
+		fmt.Printf("websocket.Dial failed %v", err)
 		return nil, err
 	}
 
@@ -85,14 +89,17 @@ func newChromeWithArgs(chromeBinary string, args ...string) (*chrome, error) {
 	c.target, err = c.findTarget()
 	if err != nil {
 		c.kill()
+		fmt.Printf("c.findTarget failed %v", err)
 		return nil, err
 	}
 
 	c.session, err = c.startSession(c.target)
 	if err != nil {
 		c.kill()
+		fmt.Printf("startSession failed %v", err)
 		return nil, err
 	}
+
 	go c.readLoop()
 	for method, args := range map[string]h{
 		"Page.enable":          nil,
@@ -106,6 +113,7 @@ func newChromeWithArgs(chromeBinary string, args ...string) (*chrome, error) {
 		if _, err := c.send(method, args); err != nil {
 			c.kill()
 			c.cmd.Wait()
+			fmt.Printf("send failed %v", err)
 			return nil, err
 		}
 	}
@@ -114,6 +122,7 @@ func newChromeWithArgs(chromeBinary string, args ...string) (*chrome, error) {
 		win, err := c.getWindowForTarget(c.target)
 		if err != nil {
 			c.kill()
+			fmt.Printf("getWindowForTarget failed %v", err)
 			return nil, err
 		}
 		c.window = win.WindowID
@@ -518,11 +527,17 @@ func (c *chrome) kill() error {
 
 func readUntilMatch(r io.ReadCloser, re *regexp.Regexp) ([]string, error) {
 	br := bufio.NewReader(r)
+	defer r.Close()
 	for {
-		if line, err := br.ReadString('\n'); err != nil {
-			r.Close()
+		line, err := br.ReadString('\n')
+		fmt.Println(line)
+		if err != nil {
+			if err == io.EOF {
+				return nil, fmt.Errorf("unexpected EOF. DevTool not found")
+			}
 			return nil, err
 		} else if m := re.FindStringSubmatch(line); m != nil {
+			fmt.Println(line)
 			go io.Copy(ioutil.Discard, br)
 			return m, nil
 		}

@@ -11,7 +11,6 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/kbinani/screenshot v0.0.0-20210720154843-7d3a670d8329
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/lxn/win v0.0.0-20210218163916-a377121e959e
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/spf13/cobra v1.2.1
@@ -33,6 +32,7 @@ require (
 	github.com/google/btree v1.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jezek/xgb v0.0.0-20210312150743-0e0f116e1240 // indirect
+	github.com/lxn/win v0.0.0-20210218163916-a377121e959e // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
@@ -51,5 +51,5 @@ require (
 
 replace (
 	filippo.io/mkcert => github.com/FiloSottile/mkcert v0.0.0-20210213023452-0a3190b1659e
-	github.com/webview/webview => github.com/unikiosk/webview v0.0.0-20211119125735-5f60f80e0e3b
+	github.com/zserge/lorca => github.com/unikiosk/lorca v0.0.0-20211120113058-786a2006febc
 )

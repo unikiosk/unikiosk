@@ -90,3 +90,17 @@ Interact with container:
 make build-cli
 ./release/cli --url https://synpse.net
 ```
+
+## Debug
+
+You will be able to build binaries with `make build` and test them in the container environment so avoiding installing dependencies locally.
+You might need to install `xhost` and grant access to docker:
+```
+export DISPLAY=:0.0
+xhost +local:docker
+```
+
+Run using docker:
+```
+docker run  -e DISPLAY=:0 --net=host  -v /tmp/.X11-unix:/tmp/.X11-unix -v $(pwd):/go -it --entrypoint bash --privileged quay.io/unikiosk/unikiosk
+```

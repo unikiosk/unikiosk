@@ -30,7 +30,7 @@ func (p *proxy) runHTTP(ctx context.Context) error {
 
 	p.proxyHTTP.OnRequest().DoFunc(
 		func(r *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-			p.log.Info("set headers")
+			//p.log.Info("set headers")
 			for k, v := range p.config.ProxyHeaders {
 				r.Header.Set(k, v)
 			}

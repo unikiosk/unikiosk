@@ -121,10 +121,11 @@ func (k *kiosk) startOrRestore() error {
 
 	state := k.getCurrentState()
 
+	sandbox := "--no-sandbox" // mandatory
 	fullScreen := "--start-fullscreen"
 	proxyHTTPS := fmt.Sprintf("--proxy-server=%s", k.config.DefaultHTTPSProxyURL)
 
-	ui, err := lorca.New("https://grafana.webrelay.io/playlists/play/1?kiosk", "", int(state.SizeW), int(state.SizeH), fullScreen, proxyHTTPS)
+	ui, err := lorca.New("https://grafana.webrelay.io/playlists/play/1?kiosk", "", int(state.SizeW), int(state.SizeH), sandbox, fullScreen, proxyHTTPS)
 	if err != nil {
 		return err
 	}
