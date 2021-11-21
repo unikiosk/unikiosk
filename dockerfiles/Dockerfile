@@ -45,8 +45,8 @@ RUN apt-get update && apt-get install -y \
 RUN adduser --system --uid 5000 --disabled-password --shell /bin/bash  -q chromium
 RUN addgroup chromium tty
 
-# install mkcert
-RUN curl -s https://api.github.com/repos/FiloSottile/mkcert/releases/latest| grep browser_download_url  | grep linux-$TARGETARCH | cut -d '"' -f 4 | wget -O mkcert -i -
+# install mkcert. use arm64
+RUN curl -s https://api.github.com/repos/FiloSottile/mkcert/releases/latest| grep browser_download_url  | grep linux-arm64 | cut -d '"' -f 4 | wget -O mkcert -i -
 RUN chmod a+x mkcert 
 
 COPY --from=go-build-env /app/screen /bin/
