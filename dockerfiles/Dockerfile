@@ -24,7 +24,7 @@ ADD scripts/start /root/start
 ADD scripts/run /bin/run
 ADD ui /www
 
-RUN chmod +x /bin/run /bin/screen
+RUN chmod 777 /bin/run /bin/screen
 
 ENV XINITRC=/root/start
 ENTRYPOINT ["/bin/run"]
