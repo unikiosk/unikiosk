@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"sync/atomic"
 
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -10,11 +9,11 @@ import (
 	"github.com/unikiosk/unikiosk/pkg/config"
 	"github.com/unikiosk/unikiosk/pkg/eventer"
 	"github.com/unikiosk/unikiosk/pkg/grpc"
+	"github.com/unikiosk/unikiosk/pkg/lorca"
 	"github.com/unikiosk/unikiosk/pkg/proxy"
 	"github.com/unikiosk/unikiosk/pkg/store/disk"
 	"github.com/unikiosk/unikiosk/pkg/util/recover"
 	"github.com/unikiosk/unikiosk/pkg/web"
-	"github.com/unikiosk/unikiosk/pkg/webview"
 )
 
 type Service interface {
@@ -25,12 +24,10 @@ type ServiceManager struct {
 	log    *zap.Logger
 	config *config.Config
 
-	ready atomic.Value
-
-	webview webview.Kiosk
-	web     web.Interface
-	grpc    grpc.Server
-	proxy   proxy.Proxy
+	lorca lorca.Kiosk
+	web   web.Interface
+	grpc  grpc.Server
+	proxy proxy.Proxy
 }
 
 func New(ctx context.Context, log *zap.Logger, config *config.Config) (*ServiceManager, error) {
@@ -42,7 +39,7 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config) (*ServiceM
 		return nil, err
 	}
 
-	webview, err := webview.New(log.Named("webview"), config, events, store)
+	lorca, err := lorca.New(log.Named("lorca"), config, events, store)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +54,7 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config) (*ServiceM
 		return nil, err
 	}
 
-	proxy, err := proxy.New(ctx, log.Named("proxy"), config, events, store)
+	proxy, err := proxy.New(ctx, log.Named("proxy"), config)
 	if err != nil {
 		return nil, err
 	}
@@ -66,10 +63,10 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config) (*ServiceM
 		log:    log,
 		config: config,
 
-		webview: webview,
-		web:     web,
-		grpc:    grpc,
-		proxy:   proxy,
+		lorca: lorca,
+		web:   web,
+		grpc:  grpc,
+		proxy: proxy,
 	}, nil
 }
 
@@ -93,8 +90,8 @@ func (s *ServiceManager) Run(ctx context.Context) error {
 	})
 
 	// webview must run in the main thread! can't be in separete go routine
-	s.webview.Run(ctx)
-	defer s.webview.Close()
+	s.lorca.Run(ctx)
+	defer s.lorca.Close()
 
 	return g.Wait()
 }

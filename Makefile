@@ -1,8 +1,8 @@
 build-screen:
-	CGO_ENABLED=1 GOARCH=amd64 go build -o ./release/screen ./cmd/screen
+	 GOARCH=amd64 go build -o ./release/screen ./cmd/screen
 
 build-cli:
-	CGO_ENABLED=1 GOARCH=amd64 go build -o ./release/cli ./cmd/cli
+	GOARCH=amd64 go build -o ./release/cli ./cmd/cli
 
 build: build-screen build-cli
 
@@ -12,7 +12,7 @@ build-image:
 # for arm32 add linux/arm/v7
 buildx-image:
 	docker buildx create --use && \
-	docker buildx build --platform linux/amd64,linux/arm64 -t quay.io/unikiosk/unikiosk --push -f dockerfiles/Dockerfile .
+	docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t quay.io/unikiosk/unikiosk --push -f dockerfiles/Dockerfile .
 
 push-image-test:
 	docker push quay.io/unikiosk/unikiosk
@@ -33,7 +33,6 @@ run-ui:
 
 run-screen:
 	STATE_DIR=$(shell pwd)/data \
-	KIOSK_MODE=proxy \
 	WEB_SERVER_DIR=$(shell pwd)/ui \
 	go run ./cmd/screen
 
@@ -49,3 +48,11 @@ test:
 
 clean:
 	rm -rf data
+
+install-mkcert:
+	go install ./vendor/filippo.io/mkcert
+
+# generate-mkcerts will generate certificate and copy for dev to local dir
+generate-mkcert:
+	mkcert -install
+	cp $(shell mkcert -CAROOT)/* ./

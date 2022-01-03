@@ -34,7 +34,7 @@ steps:
     image: quay.io/unikiosk/test-base
     commands:
       - docker login --username "$${DOCKER_USERNAME}" --password "$${DOCKER_PASSWORD}" quay.io
-      - make buildx-image
+      - make install-mkcert generate-mkcert buildx-image
     environment:
       DOCKER_USERNAME:
         from_secret: docker_username

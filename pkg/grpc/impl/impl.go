@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"strings"
 
 	"go.uber.org/zap"
 
@@ -35,89 +34,27 @@ func NewKioskServiceGrpcImpl(log *zap.Logger, config *config.Config, events even
 
 // StartOrUpdate will start or update running kiosk session
 func (s *KioskServiceGrpcImpl) StartOrUpdate(ctx context.Context, in *models.KioskRequest) (*service.KioskResponse, error) {
-	payload := api.ProtoKioskRequestToModels(in)
-
-	switch s.config.KioskMode {
-	// direct mode allows static content and url
-	case api.KioskModeDirect:
-		// load static file
-		if strings.HasPrefix(payload.Content, api.StaticFilePrefix) {
-			// update webview only
-			callback, err := s.events.Emit(&eventer.EventWrapper{
-				Payload: api.Event{
-					Type:      api.EventTypeWebViewUpdate,
-					KioskMode: api.KioskModeDirect,
-					Request:   api.ProtoKioskRequestToModels(in),
-				},
-			})
-			if err != nil {
-				return nil, err
-			}
-			if callback != nil {
-				return &service.KioskResponse{
-					State: &models.KioskRespose{
-						Content:    callback.Payload.Response.Content,
-						Title:      callback.Payload.Response.Title,
-						SizeW:      callback.Payload.Response.SizeW,
-						SizeH:      callback.Payload.Response.SizeH,
-						PowerState: models.EnumScreenPowerState(callback.Payload.Response.ScreenPowerState),
-					},
-					Error: nil,
-				}, nil
-			}
-		} else { //load url
-			// update proxy, and proxy will update webview
-			// update webview only
-			callback, err := s.events.Emit(&eventer.EventWrapper{
-				Payload: api.Event{
-					Type:      api.EventTypeWebViewUpdate,
-					KioskMode: api.KioskModeDirect,
-					Request:   api.ProtoKioskRequestToModels(in),
-				},
-			})
-			if err != nil {
-				return nil, err
-			}
-			if callback != nil {
-				return &service.KioskResponse{
-					State: &models.KioskRespose{
-						Content:    callback.Payload.Response.Content,
-						Title:      callback.Payload.Response.Title,
-						SizeW:      callback.Payload.Response.SizeW,
-						SizeH:      callback.Payload.Response.SizeH,
-						PowerState: models.EnumScreenPowerState(callback.Payload.Response.ScreenPowerState),
-					},
-					Error: nil,
-				}, nil
-			}
-		}
-	case api.KioskModeProxy:
-		// update proxy, and proxy will update webview
-		callback, err := s.events.Emit(&eventer.EventWrapper{
-			Payload: api.Event{
-				Type:      api.EventTypeProxyUpdate,
-				KioskMode: api.KioskModeProxy,
-				Request:   api.ProtoKioskRequestToModels(in),
+	// update webview only
+	callback, err := s.events.Emit(&eventer.EventWrapper{
+		Payload: api.Event{
+			Type:    api.EventTypeWebViewUpdate,
+			Request: api.ProtoKioskRequestToModels(in),
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if callback != nil {
+		return &service.KioskResponse{
+			State: &models.KioskRespose{
+				Content:    callback.Payload.Response.Content,
+				Title:      callback.Payload.Response.Title,
+				SizeW:      callback.Payload.Response.SizeW,
+				SizeH:      callback.Payload.Response.SizeH,
+				PowerState: models.EnumScreenPowerState(callback.Payload.Response.ScreenPowerState),
 			},
-		})
-		if err != nil {
-			return nil, err
-		}
-		if callback != nil {
-			return &service.KioskResponse{
-				State: &models.KioskRespose{
-					Content:    callback.Payload.Response.Content,
-					Title:      callback.Payload.Response.Title,
-					SizeW:      callback.Payload.Response.SizeW,
-					SizeH:      callback.Payload.Response.SizeH,
-					PowerState: models.EnumScreenPowerState(callback.Payload.Response.ScreenPowerState),
-				},
-				Error: nil,
-			}, nil
-		}
-
-	default:
-		return nil, fmt.Errorf("unsupported update with mode %s", string(s.config.KioskMode))
+			Error: nil,
+		}, nil
 	}
 	return nil, fmt.Errorf("unknown error")
 }
