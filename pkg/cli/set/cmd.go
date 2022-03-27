@@ -11,6 +11,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/cobra"
+
 	"github.com/unikiosk/unikiosk/pkg/api"
 )
 
