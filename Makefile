@@ -20,7 +20,7 @@ fix-multiarch:
 # for arm32 add linux/arm/v7
 buildx-image:
 	docker buildx create --use && \
-	docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t quay.io/unikiosk/unikiosk --push -f dockerfiles/Dockerfile .
+	docker buildx build --platform linux/amd64,linux/arm64 -t quay.io/unikiosk/unikiosk --push -f dockerfiles/Dockerfile .
 
 dev-buildx-image:
 	docker buildx create --use && \
