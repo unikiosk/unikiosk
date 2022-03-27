@@ -1,33 +1,48 @@
 # UniKiosk - Universal Kiosk
 
-Universal Kiosk (UniKiosk) is a minimal container image running `webview` kiosk with a built-in webserver and proxy,
-controllable via GRPC API. You can reload, start, stop, resize window via remote calls.
+Universal Kiosk (UniKiosk) is a minimal container image running `lorca` kiosk with a built-in webserver and proxy,
+controllable via API. You can reload, start, stop, resize window via remote calls.
 
 Container initiates X session via xinit and starts the service so you don't need any X environment running on the target server!
+
+## High level overview
+
+Any url, provided to UniKiosk is routed via internal MITM proxy. This way we can do offline caching, certificate spoofing and other
+interesting things to make sure content is represented as it should be. 
+
+```
+Lorca -> proxy -> internet
+```
+
+When UniKiosk is started it serves initial web content from built-in webserver (same process which runs API)
+```
+Lorca -> proxy -> internal web server
+```
+
+`pkg/web` api accepts requests and routes them via event hub. 
 
 ## Pre-requisites
 
 1. Install RPI or any other device with ubuntu server image. No need for graphic environment
 2. Install docker
 
-
 ## Run
 
-Port 7000 is used for remote management (GRPC API). Mounted volume - for state management. 
+Port 8081 is used for remote management (API). Mounted volume - for state management. 
 Run using Docker:
 
 ```
-docker run -d -v /data/unikiosk:/data -p 7000:7000 quay.io/unikiosk/unikiosk 
+docker run -d -v /data/unikiosk:/data -p 8081:8081 quay.io/unikiosk/unikiosk 
 ```
 
 Change default webpage:
 ```
-./release/cli --url https://synpse.net
+./release/cli set --url https://synpse.net
 ```
 
 In addition you can provide your own single page to show:
 ```
-./release/cli --file examples/index.html
+./release/cli set --file examples/index.html
 ```
 
 ## Configuration options
@@ -71,24 +86,24 @@ You should see default landing page
 1. Update page to URL:
 
 ```
-go run ./cmd/cli --url https://synpse.net
+go run ./cmd/cli set --url https://synpse.net
 ```
 
 2. Update page with local file content:
 
 ```
-go run ./cmd/cli/ --file example/index.html
+go run ./cmd/cli/ set --file example/index.html
 ```
 
 Run using docker:
 ```
-docker run -v /data/unikiosk:/data -p 7000:7000 quay.io/unikiosk/unikiosk 
+docker run --privileged -v /data/unikiosk:/data -p 8081:8081 quay.io/unikiosk/unikiosk 
 ```
 
 Interact with container:
 ```
 make build-cli
-./release/cli --url https://synpse.net
+./release/cli set --url https://synpse.net
 ```
 
 ## Debug

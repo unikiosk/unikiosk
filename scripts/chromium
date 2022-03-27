@@ -1,0 +1,4 @@
+xset -dpms
+xset s off
+xset s noblank
+su  -c "chromium --no-sandbox --url www.synpse.net"

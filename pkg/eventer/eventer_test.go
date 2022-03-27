@@ -26,7 +26,6 @@ func TestEventer(t *testing.T) {
 	events := []EventWrapper{
 		{
 			Payload: api.Event{
-				Type: api.EventTypeProxyUpdate,
 				Request: api.KioskRequest{
 					Content: "foo",
 				},
@@ -34,7 +33,6 @@ func TestEventer(t *testing.T) {
 		},
 		{
 			Payload: api.Event{
-				Type: api.EventTypeProxyUpdate,
 				Request: api.KioskRequest{
 					Content: "foo1",
 				},
@@ -42,7 +40,6 @@ func TestEventer(t *testing.T) {
 		},
 		{
 			Payload: api.Event{
-				Type: api.EventTypeProxyUpdate,
 				Request: api.KioskRequest{
 					Content: "foo2",
 				},
@@ -103,7 +100,6 @@ func TestEventer_iterateConsumers(t *testing.T) {
 
 	ev := &EventWrapper{
 		Payload: api.Event{
-			Type: api.EventTypeProxyUpdate,
 			Request: api.KioskRequest{
 				Content: "foo",
 			},
@@ -150,7 +146,6 @@ func TestEventer_callaback(t *testing.T) {
 	events := []EventWrapper{
 		{
 			Payload: api.Event{
-				Type: api.EventTypeProxyUpdate,
 				Request: api.KioskRequest{
 					Content: "foo",
 				},

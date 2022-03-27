@@ -1,51 +1,41 @@
 package api
 
-import "github.com/unikiosk/unikiosk/pkg/grpc/models"
-
 const StaticFilePrefix = "data:text/html"
+const ContentTypeApplicationJSON = "application/json"
 
-// KioskState respresent current Kiosk state
-type KioskState struct {
-	Content string
-	// ContentHash is hash of content before it was modified
-	ContentHash      string
-	Title            string
-	SizeW            int64
-	SizeH            int64
-	ScreenPowerState ScreenPowerState
-	KioskMode        KioskMode
-
-	Screenshot []byte
-}
-
-// KioskRequest represents request to interact with kiosk. It should match protoc spec
+// KioskRequest represents request to interact with kiosk
 type KioskRequest struct {
 	Content string
 	Title   string
-	SizeW   int64
-	SizeH   int64
+	SizeW   int
+	SizeH   int
 	Action  ScreenAction
-}
-
-func ProtoKioskRequestToModels(in *models.KioskRequest) KioskRequest {
-	return KioskRequest{
-		Content: in.Content,
-		Title:   in.Title,
-		SizeW:   in.SizeW,
-		SizeH:   in.SizeH,
-		Action:  ScreenAction(in.Action),
-	}
 }
 
 // KioskResponse represents response payload for the api
 type KioskResponse struct {
-	Content          string
-	Title            string
-	SizeW            int64
-	SizeH            int64
-	ScreenPowerState ScreenPowerState
-	KioskMode        KioskMode
-	Screenshot       []byte
+	Content    string
+	Title      string
+	SizeW      int
+	SizeH      int
+	PowerState PowerState
+	KioskMode  KioskMode
+	// optional fields
+	Screenshot []byte
+}
+
+// KioskState respresent current Kiosk state and is used for eventing and storage
+type KioskState struct {
+	Content string
+	// ContentHash is hash of content before it was modified
+	ContentHash string
+	Title       string
+	SizeW       int
+	SizeH       int
+	PowerState  PowerState
+	KioskMode   KioskMode
+
+	Screenshot []byte
 }
 
 // Kiosk mode defines mode of operations
@@ -58,10 +48,11 @@ var (
 	KioskModeProxy KioskMode = "proxy"
 )
 
-type ScreenPowerState int64
+// PowerState defines screen power state
+type PowerState int
 
 const (
-	ScreenPowerStateOn ScreenPowerState = iota
-	ScreenPowerStateOff
-	ScreenPowerStateUnknown
+	PowerStateOn PowerState = iota
+	PowerStateOff
+	PowerStateUnknown
 )

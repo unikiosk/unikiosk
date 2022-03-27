@@ -1,0 +1,7 @@
+1. Start an app
+2. Lorca load state and see if fresh or not (bootstrap or reload previous)
+3. Proxy start. TODO: I suspect proxy needs to start before Locra. Sync, mux, chaining?
+4. Once API gets event for trigger, send it to lorca. 
+
+open question:
+1. Does proxy process at this point needs anything from api? Can we deal with 1:1 mapping

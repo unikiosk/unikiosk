@@ -1,6 +1,10 @@
 build-screen:
 	 GOARCH=amd64 go build -o ./release/screen ./cmd/screen
 
+build-screen-arm64:
+	 GOARCH=arm64 go build -o ./release/screen-arm64 ./cmd/screen
+
+
 build-cli:
 	GOARCH=amd64 go build -o ./release/cli ./cmd/cli
 
@@ -9,10 +13,22 @@ build: build-screen build-cli
 build-image:
 	docker build -t quay.io/unikiosk/unikiosk -f dockerfiles/Dockerfile .
 
+# fix error: /bin/sh: Invalid ELF image for this architecture 
+fix-multiarch:
+	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
 # for arm32 add linux/arm/v7
 buildx-image:
 	docker buildx create --use && \
 	docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t quay.io/unikiosk/unikiosk --push -f dockerfiles/Dockerfile .
+
+dev-buildx-image:
+	docker buildx create --use && \
+	docker buildx build --platform linux/amd64,linux/arm64 -t quay.io/unikiosk/unikiosk --push -f dockerfiles/Dockerfile .
+
+dev-buildx-image-chromium:
+	docker buildx create --use && \
+	docker buildx build --platform linux/amd64,linux/arm64 -t quay.io/unikiosk/unikiosk:chromium --push -f dockerfiles/Dockerfile.chromium .
 
 push-image-test:
 	docker push quay.io/unikiosk/unikiosk
@@ -56,3 +72,10 @@ install-mkcert:
 generate-mkcert:
 	mkcert -install
 	cp $(shell mkcert -CAROOT)/* ./
+
+
+emulator-install:
+	docker run --privileged --rm tonistiigi/binfmt --install all
+
+emulator-remote:
+	docker run --privileged --rm tonistiigi/binfmt --uninstall qemu-*

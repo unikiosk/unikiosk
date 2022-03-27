@@ -1,5 +1,10 @@
 package api
 
+import (
+	"fmt"
+	"strings"
+)
+
 type ScreenAction int
 
 const (
@@ -9,7 +14,28 @@ const (
 	ScreenActionPowerOff
 	ScreenActionPowerOn
 	ScreenActionScreenShot
+
+	ScreenActionUnknown
 )
+
+func StringToAction(a string) (ScreenAction, error) {
+	switch strings.ToLower(a) {
+	case "start":
+		return ScreenActionStart, nil
+	case "update":
+		return ScreenActionUpdate, nil
+	case "stop":
+		return ScreenActionStop, nil
+	case "poweroff":
+		return ScreenActionPowerOff, nil
+	case "poweron":
+		return ScreenActionPowerOn, nil
+	case "screenshot":
+		return ScreenActionScreenShot, nil
+	default:
+		return ScreenActionUnknown, fmt.Errorf("unknown action")
+	}
+}
 
 func (s ScreenAction) String() string {
 	switch s {

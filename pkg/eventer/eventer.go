@@ -46,7 +46,7 @@ type ChannelEventer struct {
 	events chan *EventWrapper
 
 	// consumers is a slice of eventConsumers to broadcast events to.
-	// access is gaurded by consumersLock RWMutex
+	// access is guarded by consumersLock RWMutex
 	consumers     []*eventConsumer
 	consumersLock sync.RWMutex
 
