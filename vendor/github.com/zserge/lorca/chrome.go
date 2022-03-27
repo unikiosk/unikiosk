@@ -530,7 +530,6 @@ func readUntilMatch(r io.ReadCloser, re *regexp.Regexp) ([]string, error) {
 	defer r.Close()
 	for {
 		line, err := br.ReadString('\n')
-		fmt.Println(line)
 		if err != nil {
 			if err == io.EOF {
 				return nil, fmt.Errorf("unexpected EOF. DevTool not found")
