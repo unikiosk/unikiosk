@@ -20,11 +20,11 @@ fix-multiarch:
 # for arm32 add linux/arm/v7
 buildx-image:
 	docker buildx create --use && \
-	docker buildx build --platform linux/amd64,linux/arm64 -t quay.io/unikiosk/unikiosk --push -f dockerfiles/Dockerfile .
+	docker buildx build --platform linux/amd64,linux/arm64 -t quay.io/unikiosk/unikiosk --push -f dockerfiles/Dockerfile.firefox .
 
 dev-buildx-image:
 	docker buildx create --use && \
-	docker buildx build --platform linux/amd64,linux/arm64 -t quay.io/unikiosk/unikiosk --push -f dockerfiles/Dockerfile .
+	docker buildx build --platform linux/amd64,linux/arm64 -t quay.io/unikiosk/unikiosk --push -f dockerfiles/Dockerfile.firefox .
 
 dev-buildx-image-chromium:
 	docker buildx create --use && \
@@ -50,6 +50,8 @@ run-ui:
 run-screen:
 	STATE_DIR=$(shell pwd)/data \
 	WEB_SERVER_DIR=$(shell pwd)/ui \
+	PROXY_HTTPS_CERT=$(pwd)/rootCA.pem
+	PROXY_HTTPS_CERT_KEY=$(pwd)/rootCA-key.pem
 	go run ./cmd/screen
 
 lint:

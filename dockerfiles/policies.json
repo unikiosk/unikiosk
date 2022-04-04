@@ -1,0 +1,10 @@
+{
+    "policies": {
+    "Certificates": {
+        "ImportEnterpriseRoots": true,
+        "Install": [
+                   "/usr/share/ca-certificates/mozilla/unikiosk.crt"
+                   ]
+             }
+        }
+    }

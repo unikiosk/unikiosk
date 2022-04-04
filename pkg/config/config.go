@@ -26,16 +26,6 @@ type Config struct {
 	// WebServerAddr - address of where internal web server binds
 	WebServerAddr string `yaml:"webServerAddr,omitempty" envconfig:"WEB_SERVER_ADDR"  default:":8081"` // web server bind port
 
-	// default routing section
-	// DefaultHTTPProxyURL - is proxy URL. It used in webview to route requests via proxy
-	// Populated automatically
-	DefaultHTTPProxyURL string
-
-	// default routing section
-	// DefaultHTTPProxyURL - is proxy URL. It used in webview to route requests via proxy
-	// Populated automatically
-	DefaultHTTPSProxyURL string
-
 	// DefaultWebServerURL is default webserver url. Used to serve default content
 	// Populated automatically
 	DefaultWebServerURL string
@@ -76,10 +66,6 @@ func Load() (*Config, error) {
 		}
 		c.ProxyHTTPSServerAddr = fmt.Sprintf(":%d", port)
 	}
-
-	// TODO: add check if user provides full bind URL for proxy server address
-	c.DefaultHTTPProxyURL = "0.0.0.0" + c.ProxyHTTPServerAddr
-	c.DefaultHTTPSProxyURL = "0.0.0.0" + c.ProxyHTTPSServerAddr
 
 	// TODO: add check if user provided full bind URL for webserver
 	c.DefaultWebServerURL = "http://0.0.0.0" + c.WebServerAddr

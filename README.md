@@ -97,7 +97,7 @@ go run ./cmd/cli/ set --file example/index.html
 
 Run using docker:
 ```
-docker run --privileged -v /data/unikiosk:/data -p 8081:8081 quay.io/unikiosk/unikiosk 
+docker run --privileged -v /data:/data -p 8081:8081 quay.io/unikiosk/unikiosk 
 ```
 
 Interact with container:

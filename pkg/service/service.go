@@ -9,7 +9,7 @@ import (
 
 	"github.com/unikiosk/unikiosk/pkg/config"
 	"github.com/unikiosk/unikiosk/pkg/eventer"
-	"github.com/unikiosk/unikiosk/pkg/lorca"
+	"github.com/unikiosk/unikiosk/pkg/firefox"
 	"github.com/unikiosk/unikiosk/pkg/proxy"
 	"github.com/unikiosk/unikiosk/pkg/store/disk"
 	"github.com/unikiosk/unikiosk/pkg/util/recover"
@@ -24,9 +24,9 @@ type ServiceManager struct {
 	log    *zap.Logger
 	config *config.Config
 
-	lorca lorca.Kiosk
-	web   web.Interface
-	proxy proxy.Proxy
+	firefox firefox.Kiosk
+	web     web.Interface
+	proxy   proxy.Proxy
 }
 
 func New(ctx context.Context, log *zap.Logger, config *config.Config) (*ServiceManager, error) {
@@ -38,7 +38,7 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config) (*ServiceM
 		return nil, err
 	}
 
-	lorca, err := lorca.New(log.Named("lorca"), config, events, store)
+	firefox, err := firefox.New(log.Named("firefox"), config, events, store)
 	if err != nil {
 		return nil, err
 	}
@@ -57,9 +57,9 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config) (*ServiceM
 		log:    log,
 		config: config,
 
-		lorca: lorca,
-		web:   web,
-		proxy: proxy,
+		firefox: firefox,
+		web:     web,
+		proxy:   proxy,
 	}, nil
 }
 
@@ -79,8 +79,8 @@ func (s *ServiceManager) Run(ctx context.Context) error {
 
 	time.Sleep(time.Second * 5)
 	g.Go(func() error {
-		defer s.lorca.Close()
-		return s.lorca.Run(ctx)
+		defer s.firefox.Stop()
+		return s.firefox.Run(ctx)
 	})
 
 	return g.Wait()

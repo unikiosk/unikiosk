@@ -49,8 +49,6 @@ func New(ctx context.Context, log *zap.Logger, config *config.Config) (*proxy, e
 }
 
 func (p *proxy) Run(ctx context.Context) error {
-	p.log.Debug("Proxy server starting up", zap.String("http", p.config.ProxyHTTPServerAddr))
-
 	g, _ := errgroup.WithContext(ctx)
 
 	g.Go(func() error {

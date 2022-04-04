@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/cobra"
 
 	"github.com/unikiosk/unikiosk/pkg/api"
@@ -99,7 +98,6 @@ func set(ctx context.Context, c config) error {
 		return fmt.Errorf("failed to read response: %s", err.Error())
 	}
 
-	spew.Dump(result)
 	return nil
 }
 

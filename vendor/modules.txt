@@ -48,17 +48,6 @@ github.com/kelseyhightower/envconfig
 # github.com/lxn/win v0.0.0-20210218163916-a377121e959e
 ## explicit; go 1.12
 github.com/lxn/win
-# github.com/mattn/go-gtk v0.0.0-20191030024613-af2e013261f5
-## explicit
-github.com/mattn/go-gtk/gdk
-github.com/mattn/go-gtk/gdkpixbuf
-github.com/mattn/go-gtk/gio
-github.com/mattn/go-gtk/glib
-github.com/mattn/go-gtk/gtk
-github.com/mattn/go-gtk/pango
-# github.com/mattn/go-pointer v0.0.1
-## explicit
-github.com/mattn/go-pointer
 # github.com/peterbourgon/diskv v2.0.1+incompatible
 ## explicit
 github.com/peterbourgon/diskv
@@ -78,9 +67,9 @@ github.com/spf13/pflag
 ## explicit; go 1.13
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
-# github.com/zserge/lorca v0.1.10 => github.com/unikiosk/lorca v0.0.0-20211120113058-786a2006febc
-## explicit; go 1.16
-github.com/zserge/lorca
+# github.com/unikiosk/go-firefox v0.0.0-20220404104049-bc7e8cd58d00
+## explicit; go 1.17
+github.com/unikiosk/go-firefox
 # go.uber.org/atomic v1.7.0
 ## explicit; go 1.13
 go.uber.org/atomic
@@ -229,4 +218,3 @@ howett.net/plist
 software.sslmate.com/src/go-pkcs12
 software.sslmate.com/src/go-pkcs12/internal/rc2
 # filippo.io/mkcert => github.com/FiloSottile/mkcert v0.0.0-20210213023452-0a3190b1659e
-# github.com/zserge/lorca => github.com/unikiosk/lorca v0.0.0-20211120113058-786a2006febc

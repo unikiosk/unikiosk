@@ -1,0 +1,66 @@
+FROM golang:buster AS go-build-env
+WORKDIR /app
+
+COPY . .
+
+ARG TARGETARCH
+RUN GOARCH=$TARGETARCH go build -o /app/screen ./cmd/screen
+
+FROM ubuntu
+
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update && apt-get install -y \
+      firefox \
+      vim \
+      fonts-liberation \
+      fonts-roboto \
+      hicolor-icon-theme \
+      libcanberra-gtk-module \
+      libexif-dev \
+      libgl1-mesa-dri \
+      libgl1-mesa-glx \
+      libpangox-1.0-0 \
+      libv4l-0 \
+      fonts-symbola \
+      ca-certificates \
+      xserver-xorg-core \
+      xserver-xorg-video-fbdev \
+      x11-xserver-utils \
+      libgl1-mesa-dri \
+      matchbox-window-manager \
+      xautomation \
+      feh \
+      xauth \
+      xinit \
+      curl \
+      wget \
+      xdotool \
+      libnss3-tools \
+      --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/* 
+  
+RUN adduser --system --uid 5000 --disabled-password --shell /bin/bash  -q firefox
+RUN addgroup firefox tty
+
+RUN mkdir -p /root/.local/share/mkcert/
+COPY --from=go-build-env /app/rootCA-key.pem /root/.local/share/mkcert/
+COPY --from=go-build-env /app/rootCA.pem /root/.local/share/mkcert/
+RUN cp /root/.local/share/mkcert/rootCA.pem /usr/local/share/ca-certificates/rootCA.crt
+RUN cp /root/.local/share/mkcert/rootCA.pem /usr/share/ca-certificates/mozilla/unikiosk.crt 
+RUN update-ca-certificates
+
+ENV PROXY_HTTPS_CERT=/root/.local/share/mkcert/rootCA.pem
+ENV PROXY_HTTPS_CERT_KEY=/root/.local/share/mkcert/rootCA-key.pem
+
+# Add unikiosk scripts
+COPY --from=go-build-env /app/screen /bin/
+COPY dockerfiles/policies.json /usr/lib/firefox/distribution/policies.json
+
+ADD scripts/start /root/start
+ADD scripts/run /bin/run
+ADD ui /www
+
+RUN chmod 777 /bin/run /root/start
+
+ENV XINITRC=/root/start
+ENTRYPOINT ["/bin/run"]
