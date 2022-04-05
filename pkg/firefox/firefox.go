@@ -11,9 +11,8 @@ import (
 	"time"
 
 	"github.com/kbinani/screenshot"
-	"go.uber.org/zap"
-
 	gofirefox "github.com/unikiosk/go-firefox"
+	"go.uber.org/zap"
 
 	"github.com/unikiosk/unikiosk/pkg/api"
 	"github.com/unikiosk/unikiosk/pkg/config"
