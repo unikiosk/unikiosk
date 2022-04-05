@@ -36,6 +36,10 @@ RUN apt-get update && apt-get install -y \
       wget \
       xdotool \
       libnss3-tools \
+      libgles2-mesa \
+      libgles2-mesa-dev \
+      xorg-dev \
+      libpci-dev \
       --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* 
   

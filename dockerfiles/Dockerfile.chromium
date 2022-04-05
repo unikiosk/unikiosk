@@ -12,8 +12,6 @@ ENV DEBIAN_FRONTEND noninteractive
 # Install Chromium
 # Yes, including the Google API Keys sucks but even debian does the same: https://packages.debian.org/stretch/amd64/chromium/filelist
 RUN apt-get update && apt-get install -y \
-      chromium \
-      chromium-l10n \
       fonts-liberation \
       fonts-roboto \
       hicolor-icon-theme \
@@ -37,6 +35,9 @@ RUN apt-get update && apt-get install -y \
       curl \
       wget \
       libnss3-tools \
+      libgles2-mesa \
+      libgles2-mesa-dev \
+      xorg-dev \
       --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /etc/chromium.d/ \

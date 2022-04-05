@@ -17,10 +17,10 @@ build-image:
 fix-multiarch:
 	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-# for arm32 add linux/arm/v7
+# for arm32 add 
 buildx-image:
 	docker buildx create --use && \
-	docker buildx build --platform linux/amd64,linux/arm64 -t quay.io/unikiosk/unikiosk --push -f dockerfiles/Dockerfile.firefox .
+	docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t quay.io/unikiosk/unikiosk --push -f dockerfiles/Dockerfile.firefox .
 
 dev-buildx-image:
 	docker buildx create --use && \
